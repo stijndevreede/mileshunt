@@ -1,0 +1,19 @@
+services:
+  xphunt:
+    build: ..
+    container_name: xphunt
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8010:8000"
+    volumes:
+      - xphunt-data:/app/data
+    environment:
+      - MILESHUNT_DB=/app/data/mileshunt.db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/xp-table')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  xphunt-data:
