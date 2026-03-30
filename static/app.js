@@ -6,11 +6,12 @@ const $$ = (sel) => document.querySelectorAll(sel);
 let groups = [];
 let activeGroups = new Set();
 let expandedGroup = null;
+let userToken = localStorage.getItem('xphunt_token');
+let currentUser = null;
 
 // ── Init ───────────────────────────────────────────────────
 
 async function init() {
-  // Set default dates: tomorrow + day after
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const dayAfter = new Date();
@@ -18,7 +19,6 @@ async function init() {
   $('#date').value = tomorrow.toISOString().split('T')[0];
   $('#return-date').value = dayAfter.toISOString().split('T')[0];
 
-  // Load destination groups
   try {
     const resp = await fetch('/api/groups');
     groups = await resp.json();
@@ -27,7 +27,6 @@ async function init() {
     console.error('Failed to load groups:', e);
   }
 
-  // Wire up events
   $('#btn-hunt').addEventListener('click', runHunt);
   $('#trip-type').addEventListener('change', onTripTypeChange);
   $('#xp-ref-toggle').addEventListener('click', () => {
@@ -39,7 +38,123 @@ async function init() {
     $('#xp-ref').hidden = true;
   });
 
+  // Login modal
+  $('#login-submit').addEventListener('click', doLogin);
+  $('#login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('#login-close').addEventListener('click', () => { $('#login-modal').hidden = true; });
+  $('#logout-btn').addEventListener('click', doLogout);
+
   onTripTypeChange();
+
+  // Check existing session
+  if (userToken) {
+    try {
+      const r = await fetch(`/api/me?token=${userToken}`);
+      if (r.ok) {
+        currentUser = await r.json();
+        updateAuthUI();
+      } else {
+        localStorage.removeItem('xphunt_token');
+        userToken = null;
+      }
+    } catch (e) {
+      userToken = null;
+    }
+  }
+  updateAuthUI();
+}
+
+// ── Auth ───────────────────────────────────────────────────
+
+function updateAuthUI() {
+  if (currentUser) {
+    $('#user-info').hidden = false;
+    $('#user-name').textContent = currentUser.name;
+    loadLeaderboard();
+  } else {
+    $('#user-info').hidden = true;
+    $('#leaderboard').hidden = true;
+  }
+}
+
+async function loadLeaderboard() {
+  if (!userToken) return;
+  try {
+    const r = await fetch(`/api/best-deals?token=${userToken}`);
+    if (!r.ok) return;
+    const deals = await r.json();
+    if (!deals || deals.length === 0) {
+      $('#leaderboard').hidden = true;
+      return;
+    }
+    const tbody = $('#leaderboard-body');
+    tbody.innerHTML = deals.map((d, i) => {
+      const ratingClass = (d.rating || '').toLowerCase();
+      const route = d.return_route ? `${d.route} / ${d.return_route}` : d.route;
+      const foundBy = (d.found_by || '').split('@')[0];
+      return `<tr>
+        <td>${i + 1}</td>
+        <td class="lb-route">${route}</td>
+        <td class="lb-price">\u20AC${Math.round(d.price)}</td>
+        <td class="lb-xp">${d.xp_total}</td>
+        <td class="lb-per-xp">\u20AC${d.per_xp}</td>
+        <td><span class="card-rating rating-${ratingClass}" style="font-size:10px">${d.rating}</span></td>
+        <td>${d.cabin}</td>
+        <td class="lb-found-by">${foundBy}</td>
+      </tr>`;
+    }).join('');
+    $('#leaderboard').hidden = false;
+  } catch (e) {
+    console.error('Leaderboard error:', e);
+  }
+}
+
+function showLoginModal() {
+  $('#login-modal').hidden = false;
+  $('#login-error').hidden = true;
+  $('#login-email').value = '';
+  $('#login-password').value = '';
+  $('#login-email').focus();
+}
+
+async function doLogin() {
+  const email = $('#login-email').value.trim();
+  const password = $('#login-password').value;
+  if (!email || !password) return;
+
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!r.ok) {
+      $('#login-error').textContent = 'Invalid email or password';
+      $('#login-error').hidden = false;
+      return;
+    }
+    const data = await r.json();
+    userToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('xphunt_token', userToken);
+    $('#login-modal').hidden = true;
+    updateAuthUI();
+    // Auto-trigger search after login
+    runHunt();
+  } catch (e) {
+    $('#login-error').textContent = 'Connection error';
+    $('#login-error').hidden = false;
+  }
+}
+
+async function doLogout() {
+  if (userToken) {
+    fetch(`/api/logout?token=${userToken}`, { method: 'POST' }).catch(() => {});
+  }
+  localStorage.removeItem('xphunt_token');
+  userToken = null;
+  currentUser = null;
+  updateAuthUI();
 }
 
 function onTripTypeChange() {
@@ -47,7 +162,7 @@ function onTripTypeChange() {
   $('#return-field').style.display = isReturn ? '' : 'none';
 }
 
-// ── Group Chips with Expand ────────────────────────────────
+// ── Group Chips ────────────────────────────────────────────
 
 function renderGroupChips() {
   const container = $('#group-chips');
@@ -62,22 +177,16 @@ function renderGroupChips() {
 
     if (g.default_on) activeGroups.add(g.id);
 
-    // Left click: toggle active
     chip.addEventListener('click', (e) => {
       if (e.shiftKey) {
-        // Shift+click: expand/collapse detail
         toggleGroupDetail(g, chip);
         return;
       }
       chip.classList.toggle('active');
-      if (activeGroups.has(g.id)) {
-        activeGroups.delete(g.id);
-      } else {
-        activeGroups.add(g.id);
-      }
+      if (activeGroups.has(g.id)) activeGroups.delete(g.id);
+      else activeGroups.add(g.id);
     });
 
-    // Right click: show detail
     chip.addEventListener('contextmenu', (e) => {
       e.preventDefault();
       toggleGroupDetail(g, chip);
@@ -89,8 +198,6 @@ function renderGroupChips() {
 
 function toggleGroupDetail(group, chipEl) {
   const detail = $('#group-detail');
-
-  // Remove expanded class from all chips
   $$('.chip.expanded').forEach(c => c.classList.remove('expanded'));
 
   if (expandedGroup === group.id) {
@@ -116,7 +223,7 @@ function toggleGroupDetail(group, chipEl) {
   detail.hidden = false;
 }
 
-// ── Hunt ───────────────────────────────────────────────────
+// ── Hunt with SSE Progress ─────────────────────────────────
 
 async function runHunt() {
   const origin = $('#origin').value.trim().toUpperCase() || 'AMS';
@@ -125,24 +232,20 @@ async function runHunt() {
   const isReturn = $('#trip-type').value === 'return';
   const returnDate = isReturn ? $('#return-date').value : null;
 
-  if (!date) {
-    showStatus('Please select an outbound date.', false);
-    return;
-  }
-  if (isReturn && !returnDate) {
-    showStatus('Please select a return date.', false);
-    return;
-  }
-  if (activeGroups.size === 0) {
-    showStatus('Select at least one destination group.', false);
+  if (!date) { showStatus('Please select an outbound date.', false); return; }
+  if (isReturn && !returnDate) { showStatus('Please select a return date.', false); return; }
+  if (activeGroups.size === 0) { showStatus('Select at least one destination group.', false); return; }
+
+  // Login gate — only shown when pressing Hunt
+  if (!userToken) {
+    showLoginModal();
     return;
   }
 
   const btn = $('#btn-hunt');
   btn.disabled = true;
   btn.textContent = 'Searching...';
-
-  showStatus('Searching Google Flights — this may take a minute...', true);
+  showStatus('Connecting to Google Flights...', true);
   $('#stats').hidden = true;
   $('#results').innerHTML = '';
 
@@ -150,21 +253,52 @@ async function runHunt() {
     const body = { origin, date, cabin, groups: [...activeGroups] };
     if (returnDate) body.return_date = returnDate;
 
-    const resp = await fetch('/api/hunt', {
+    const resp = await fetch(`/api/hunt/stream?token=${userToken}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
 
-    if (!resp.ok) {
-      const err = await resp.text();
-      showStatus(`Error: ${err}`, false);
+    if (resp.status === 401) {
+      localStorage.removeItem('xphunt_token');
+      userToken = null;
+      currentUser = null;
+      updateAuthUI();
+      showLoginModal();
       return;
     }
 
-    const data = await resp.json();
-    hideStatus();
-    renderResults(data.deals);
+    if (!resp.ok) {
+      showStatus(`Error: ${await resp.text()}`, false);
+      return;
+    }
+
+    // Read SSE stream
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep incomplete line
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = JSON.parse(line.slice(6));
+
+        if (data.type === 'progress') {
+          showProgress(data.current, data.total, data.route, data.flights_found);
+        } else if (data.type === 'done') {
+          hideStatus();
+          renderResults(data.deals, data.duration_ms);
+          loadLeaderboard();
+        }
+      }
+    }
   } catch (e) {
     showStatus(`Network error: ${e.message}`, false);
   } finally {
@@ -178,7 +312,23 @@ async function runHunt() {
 function showStatus(msg, loading) {
   const el = $('#status');
   el.hidden = false;
-  el.innerHTML = (loading ? '<div class="spinner"></div>' : '') + msg;
+  el.innerHTML = (loading ? '<div class="spinner"></div>' : '') + `<span>${msg}</span>`;
+}
+
+function showProgress(current, total, route, flightsFound) {
+  const pct = Math.round((current / total) * 100);
+  const el = $('#status');
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="spinner"></div>
+    <div class="progress-info">
+      <div class="progress-text">${route}</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+      <div class="progress-meta">${current} / ${total} destinations &middot; ${flightsFound} flights found</div>
+    </div>
+  `;
 }
 
 function hideStatus() {
@@ -187,7 +337,7 @@ function hideStatus() {
 
 // ── Render Results ─────────────────────────────────────────
 
-function renderResults(deals) {
+function renderResults(deals, durationMs) {
   const container = $('#results');
   container.innerHTML = '';
 
@@ -200,15 +350,13 @@ function renderResults(deals) {
     return;
   }
 
-  // Stats
   const statsBar = $('#stats');
   statsBar.hidden = false;
   $('#stat-routes').textContent = deals.length;
-  $('#stat-best').textContent = `$${deals[0].per_xp}`;
+  $('#stat-best').textContent = `\u20AC${deals[0].per_xp}`;
   $('#stat-multi').textContent = deals.filter(d => d.total_segments >= 4).length;
   $('#stat-excellent').textContent = deals.filter(d => d.rating === 'EXCELLENT').length;
 
-  // Cards
   deals.forEach((deal, i) => {
     container.appendChild(createCard(deal, i + 1));
   });
@@ -221,7 +369,6 @@ function fmtDuration(mins) {
 
 function renderBreakdown(segments, label) {
   if (!segments || segments.length === 0) return '';
-
   let html = `<div class="breakdown-label">${label}</div>`;
   html += segments.map(seg => {
     const fbNote = seg.earns_fb ? '' : '<span class="seg-no-fb">no FB</span>';
@@ -233,7 +380,6 @@ function renderBreakdown(segments, label) {
       ${fbNote}
     </div>`;
   }).join('');
-
   return html;
 }
 
@@ -252,23 +398,19 @@ function createCard(deal, rank) {
     ? '<span class="card-trip-badge">RT</span>'
     : '<span class="card-trip-badge">OW</span>';
 
-  // Breakdown
   let breakdownHTML = renderBreakdown(deal.xp_breakdown, 'Outbound');
   if (isRT && deal.return_xp_breakdown && deal.return_xp_breakdown.length > 0) {
     breakdownHTML += renderBreakdown(deal.return_xp_breakdown, 'Return');
   }
 
-  // Return route line
   const returnRouteHTML = isRT && deal.return_route
     ? `<div class="card-return-route">&larr; ${deal.return_route}</div>`
     : '';
 
-  // Duration string
   const durStr = isRT
     ? `${fmtDuration(deal.duration)} + ${fmtDuration(deal.return_duration)}`
     : fmtDuration(deal.duration);
 
-  // Metrics: for RT show total XP, for OW show one-way
   const xpLabel = isRT ? 'XP (total)' : 'XP';
   const segLabel = isRT ? `${deal.outbound_segments}+${deal.return_segments} seg` : `${deal.total_segments} seg`;
 
@@ -281,7 +423,7 @@ function createCard(deal, rank) {
     ${returnRouteHTML}
     <div class="card-metrics">
       <div class="metric">
-        <div class="metric-value price">$${Math.round(deal.price).toLocaleString()}</div>
+        <div class="metric-value price">\u20AC${Math.round(deal.price).toLocaleString()}</div>
         <div class="metric-label">Price</div>
       </div>
       <div class="metric">
@@ -289,8 +431,8 @@ function createCard(deal, rank) {
         <div class="metric-label">${xpLabel}</div>
       </div>
       <div class="metric">
-        <div class="metric-value per-xp">$${deal.per_xp}</div>
-        <div class="metric-label">$/XP</div>
+        <div class="metric-value per-xp">\u20AC${deal.per_xp}</div>
+        <div class="metric-label">\u20AC/XP</div>
       </div>
       <div class="metric">
         <div class="metric-value price">${segLabel}</div>

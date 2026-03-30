@@ -14,6 +14,10 @@
       <span class="subtitle">Flying Blue XP Optimizer</span>
     </div>
     <div class="header-right">
+      <span id="user-info" hidden>
+        <span id="user-name" class="user-name"></span>
+        <button id="logout-btn" class="btn btn-ghost btn-sm">Logout</button>
+      </span>
       <button id="tips-toggle" class="btn btn-ghost">XP Tips</button>
       <button id="xp-ref-toggle" class="btn btn-ghost">XP Table</button>
     </div>
@@ -136,17 +140,52 @@
   <!-- Stats Bar -->
   <div id="stats" class="stats-bar" hidden>
     <div class="stat"><span class="stat-value" id="stat-routes">0</span><span class="stat-label">Routes</span></div>
-    <div class="stat"><span class="stat-value" id="stat-best">—</span><span class="stat-label">Best $/XP</span></div>
+    <div class="stat"><span class="stat-value" id="stat-best">—</span><span class="stat-label">Best &euro;/XP</span></div>
     <div class="stat"><span class="stat-value" id="stat-multi">0</span><span class="stat-label">Multi-stop</span></div>
     <div class="stat"><span class="stat-value" id="stat-excellent">0</span><span class="stat-label">Excellent</span></div>
+  </div>
+
+  <!-- Best Deals Leaderboard -->
+  <div id="leaderboard" class="leaderboard" hidden>
+    <div class="leaderboard-header">
+      <span class="panel-title">Best Deals Ever Found</span>
+    </div>
+    <table class="leaderboard-table">
+      <thead>
+        <tr><th>#</th><th>Route</th><th>Price</th><th>XP</th><th>&euro;/XP</th><th>Rating</th><th>Cabin</th><th>Found by</th></tr>
+      </thead>
+      <tbody id="leaderboard-body"></tbody>
+    </table>
   </div>
 
   <!-- Results -->
   <section id="results" class="results"></section>
 
   <footer class="footer">
-    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; No API key required &middot; Prices in USD</p>
+    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; Prices in EUR</p>
   </footer>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <span class="panel-title">Login to search</span>
+        <button id="login-close" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field" style="margin-bottom:12px">
+          <label for="login-email">Email</label>
+          <input id="login-email" type="email" class="input-iata" style="width:100%" placeholder="you@example.com">
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label for="login-password">Password</label>
+          <input id="login-password" type="password" class="input-iata" style="width:100%">
+        </div>
+        <button id="login-submit" class="btn btn-primary" style="width:100%;justify-content:center">Login</button>
+        <div id="login-error" class="login-error" hidden></div>
+      </div>
+    </div>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>

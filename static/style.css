@@ -497,6 +497,119 @@ body {
 }
 .empty p { font-size: 13px; }
 
+/* ── Leaderboard ─────────────────────────── */
+
+.leaderboard {
+  margin: 16px 24px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.leaderboard-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.leaderboard-table th, .leaderboard-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.leaderboard-table th {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.leaderboard-table td { color: var(--text-secondary); }
+.leaderboard-table tr:hover td { background: var(--bg-panel-hover); }
+.lb-per-xp { color: var(--green); font-weight: 600; }
+.lb-route { color: var(--text); }
+.lb-price { color: var(--text); }
+.lb-xp { color: var(--amber); font-weight: 600; }
+.lb-found-by { color: var(--text-dim); font-size: 11px; }
+
+/* ── Login Modal ─────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 340px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-body { padding: 16px; }
+.login-error {
+  color: var(--red);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* ── User Info ──────────────────────────── */
+
+.user-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-right: 4px;
+}
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* ── Progress Bar ───────────────────────── */
+
+.progress-info { flex: 1; min-width: 0; }
+.progress-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.progress-bar-wrap {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--amber);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.progress-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
 /* ── Responsive ─────────────────────────── */
 
 @media (max-width: 640px) {

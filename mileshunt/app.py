@@ -2,22 +2,23 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from pathlib import Path
 
 from fastapi import Cookie, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from mileshunt.airports import CITY_NAMES
 from mileshunt.db import (
     create_session, create_user, delete_session, delete_user,
-    get_search_stats, get_session_user, init_db, list_users,
-    log_search, verify_user,
+    get_best_deals, get_search_stats, get_session_user, init_db,
+    list_users, log_search, save_best_deals, verify_user,
 )
-from mileshunt.search import hunt, search_route
+from mileshunt.search import FlightDeal, search_route
 from mileshunt.skyteam import DEST_GROUPS
 from mileshunt.xp import BAND_LABELS, XP_TABLE
 
@@ -66,7 +67,6 @@ class CreateUserRequest(BaseModel):
 # ── Helpers ─────────────────────────────────────────────────
 
 def _get_admin(token: str | None):
-    """Validate admin session token, raise 401/403 if invalid."""
     if not token:
         raise HTTPException(401, "Not authenticated")
     user = get_session_user(token)
@@ -77,7 +77,17 @@ def _get_admin(token: str | None):
     return user
 
 
-# ── Public API ──────────────────────────────────────────────
+def _get_user(token: str | None):
+    """Validate any user session token."""
+    if not token:
+        raise HTTPException(401, "Not authenticated")
+    user = get_session_user(token)
+    if not user:
+        raise HTTPException(401, "Session expired")
+    return user
+
+
+# ── Public API (no auth) ───────────────────────────────────
 
 @app.get("/api/groups")
 def api_groups():
@@ -99,8 +109,35 @@ def api_xp_table():
     return {"bands": BAND_LABELS, "table": XP_TABLE}
 
 
+# ── User Auth ──────────────────────────────────────────────
+
+@app.post("/api/login")
+def user_login(req: LoginRequest):
+    user = verify_user(req.email, req.password)
+    if not user:
+        raise HTTPException(401, "Invalid credentials")
+    token = create_session(user["id"])
+    return {"token": token, "user": {"email": user["email"], "name": user["name"], "is_admin": bool(user["is_admin"])}}
+
+
+@app.post("/api/logout")
+def user_logout(token: str | None = None):
+    if token:
+        delete_session(token)
+    return {"ok": True}
+
+
+@app.get("/api/me")
+def api_me(token: str):
+    user = _get_user(token)
+    return {"email": user["email"], "name": user["name"], "is_admin": bool(user["is_admin"])}
+
+
+# ── Search (auth required) ─────────────────────────────────
+
 @app.post("/api/search")
-def api_search(req: SearchRequest, request: Request):
+def api_search(req: SearchRequest, request: Request, token: str):
+    user = _get_user(token)
     t0 = time.time()
     deals = search_route(req.origin.upper(), req.dest.upper(), req.date, req.cabin, req.return_date)
     ms = int((time.time() - t0) * 1000)
@@ -116,38 +153,110 @@ def api_search(req: SearchRequest, request: Request):
         results_found=len(deals),
         best_per_xp=deals[0].per_xp if deals else None,
         duration_ms=ms,
+        user_email=user["email"],
         ip_address=request.client.host if request.client else None,
     )
-
     return {"deals": [d.to_dict() for d in deals], "count": len(deals)}
 
 
-@app.post("/api/hunt")
-def api_hunt(req: HuntRequest, request: Request):
-    t0 = time.time()
-    deals = hunt(req.date, req.origin.upper(), req.groups, req.cabin, req.return_date)
-    ms = int((time.time() - t0) * 1000)
+@app.post("/api/hunt/stream")
+def api_hunt_stream(req: HuntRequest, request: Request, token: str):
+    """SSE streaming hunt — sends progress events as each destination is searched."""
+    user = _get_user(token)
 
-    group_str = ",".join(req.groups) if req.groups else "defaults"
-    log_search(
-        origin=req.origin.upper(),
-        trip_type="return" if req.return_date else "oneway",
-        cabin=req.cabin,
-        outbound_date=req.date,
-        return_date=req.return_date,
-        groups=group_str,
-        destinations_searched=len(set(d for g in DEST_GROUPS for d in g.destinations if not req.groups or g.id in req.groups)),
-        results_found=len(deals),
-        best_per_xp=deals[0].per_xp if deals else None,
-        duration_ms=ms,
-        ip_address=request.client.host if request.client else None,
-    )
+    # Resolve destination list
+    if req.groups:
+        by_id = {g.id: g for g in DEST_GROUPS}
+        groups = [by_id[gid] for gid in req.groups if gid in by_id]
+    else:
+        groups = [g for g in DEST_GROUPS if g.default_on]
 
-    return {
-        "deals": [d.to_dict() for d in deals],
-        "count": len(deals),
-        "best_per_xp": deals[0].per_xp if deals else None,
-    }
+    destinations: list[str] = []
+    seen: set[str] = set()
+    origin = req.origin.upper()
+    for g in groups:
+        for d in g.destinations:
+            if d not in seen and d != origin:
+                destinations.append(d)
+                seen.add(d)
+
+    def generate():
+        t0 = time.time()
+        all_deals: list[FlightDeal] = []
+        total = len(destinations)
+
+        for i, dest in enumerate(destinations):
+            city = CITY_NAMES.get(dest, dest)
+
+            # Send progress event
+            progress = {
+                "type": "progress",
+                "current": i + 1,
+                "total": total,
+                "route": f"{origin} > {city} ({dest})",
+                "flights_found": len(all_deals),
+            }
+            yield f"data: {json.dumps(progress)}\n\n"
+
+            try:
+                deals = search_route(origin, dest, req.date, req.cabin, req.return_date)
+                all_deals.extend(deals)
+            except Exception as e:
+                log.warning("Hunt %s>%s error: %s", origin, dest, e)
+
+        # Deduplicate
+        unique: dict[str, FlightDeal] = {}
+        for d in all_deals:
+            key = f"{d.route}_{d.return_route}_{d.price}"
+            if key not in unique:
+                unique[key] = d
+
+        sorted_deals = sorted(unique.values(), key=lambda d: d.per_xp)
+        ms = int((time.time() - t0) * 1000)
+
+        # Log the search
+        group_str = ",".join(req.groups) if req.groups else "defaults"
+        log_search(
+            origin=origin,
+            trip_type="return" if req.return_date else "oneway",
+            cabin=req.cabin,
+            outbound_date=req.date,
+            return_date=req.return_date,
+            groups=group_str,
+            destinations_searched=total,
+            results_found=len(sorted_deals),
+            best_per_xp=sorted_deals[0].per_xp if sorted_deals else None,
+            duration_ms=ms,
+            user_email=user["email"],
+            ip_address=request.client.host if request.client else None,
+        )
+
+        # Save best deals to leaderboard
+        if sorted_deals:
+            save_best_deals(
+                [d.to_dict() for d in sorted_deals],
+                user["email"], req.cabin, req.date,
+            )
+
+        # Send final results
+        result = {
+            "type": "done",
+            "deals": [d.to_dict() for d in sorted_deals],
+            "count": len(sorted_deals),
+            "best_per_xp": sorted_deals[0].per_xp if sorted_deals else None,
+            "duration_ms": ms,
+        }
+        yield f"data: {json.dumps(result)}\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
+
+
+# ── Best Deals Leaderboard ─────────────────────────────────
+
+@app.get("/api/best-deals")
+def api_best_deals(token: str):
+    _get_user(token)
+    return get_best_deals(10)
 
 
 # ── Admin Auth ──────────────────────────────────────────────
@@ -170,15 +279,11 @@ def admin_logout(token: str | None = Cookie(None, alias="admin_token")):
     return {"ok": True}
 
 
-# ── Admin: Stats ────────────────────────────────────────────
-
 @app.get("/api/admin/stats")
 def admin_stats(token: str):
     _get_admin(token)
     return get_search_stats()
 
-
-# ── Admin: Users ────────────────────────────────────────────
 
 @app.get("/api/admin/users")
 def admin_users(token: str):
@@ -202,8 +307,6 @@ def admin_delete_user(user_id: int, token: str):
     delete_user(user_id)
     return {"ok": True}
 
-
-# ── Admin Page ──────────────────────────────────────────────
 
 @app.get("/admin")
 def admin_page():

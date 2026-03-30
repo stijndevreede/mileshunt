@@ -48,6 +48,23 @@ CREATE TABLE IF NOT EXISTS sessions (
     expires_at TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS best_deals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    found_at TEXT NOT NULL,
+    found_by TEXT,
+    route TEXT NOT NULL,
+    return_route TEXT,
+    trip_type TEXT NOT NULL,
+    price REAL NOT NULL,
+    xp_total INTEGER NOT NULL,
+    per_xp REAL NOT NULL,
+    cabin TEXT NOT NULL,
+    airlines TEXT,
+    segments INTEGER,
+    rating TEXT,
+    outbound_date TEXT
+);
 """
 
 
@@ -157,6 +174,53 @@ def log_search(
              outbound_date, return_date, groups, destinations_searched,
              results_found, best_per_xp, duration_ms, ip_address),
         )
+
+
+def save_best_deals(deals: list[dict], user_email: str | None, cabin: str, outbound_date: str):
+    """Save the top deals from a search to the all-time leaderboard."""
+    with get_db() as conn:
+        for d in deals[:20]:  # save top 20 from each search
+            if d.get("xp_total", 0) <= 0:
+                continue
+            conn.execute(
+                """INSERT INTO best_deals
+                   (found_at, found_by, route, return_route, trip_type, price, xp_total,
+                    per_xp, cabin, airlines, segments, rating, outbound_date)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (datetime.utcnow().isoformat(), user_email,
+                 d.get("route", ""), d.get("return_route"),
+                 d.get("trip_type", "oneway"), d.get("price", 0),
+                 d.get("xp_total", 0), d.get("per_xp", 999),
+                 cabin, ",".join(d.get("airlines", [])),
+                 d.get("total_segments", 0), d.get("rating", ""),
+                 outbound_date),
+            )
+
+
+def get_best_deals(limit: int = 10) -> list[dict]:
+    """Return the all-time best deals by per_xp, deduplicated by route."""
+    with get_db() as conn:
+        rows = conn.execute(
+            """SELECT * FROM best_deals
+               WHERE per_xp < 999
+               ORDER BY per_xp ASC
+               LIMIT ?""",
+            (limit * 3,),  # fetch extra to allow dedup
+        ).fetchall()
+
+    # Deduplicate by route
+    seen: set[str] = set()
+    result: list[dict] = []
+    for r in rows:
+        d = dict(r)
+        key = f"{d['route']}_{d.get('return_route', '')}"
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(d)
+        if len(result) >= limit:
+            break
+    return result
 
 
 def get_search_stats() -> dict:
