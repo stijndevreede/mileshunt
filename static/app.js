@@ -291,11 +291,30 @@ async function runHunt() {
     const decoder = new TextDecoder();
     let buffer = '';
     let searchDone = false;
+    let lastProgress = Date.now();
 
     while (!searchDone) {
       if (signal.aborted) break;
-      const { done, value } = await reader.read();
+
+      // Timeout: if no data for 30s after last progress, assume done
+      const readPromise = reader.read();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('stream_timeout')), 30000)
+      );
+
+      let done, value;
+      try {
+        ({ done, value } = await Promise.race([readPromise, timeoutPromise]));
+      } catch (e) {
+        if (e.message === 'stream_timeout') {
+          console.warn('SSE stream timed out, closing');
+          break;
+        }
+        throw e;
+      }
+
       if (done) break;
+      lastProgress = Date.now();
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
@@ -316,7 +335,6 @@ async function runHunt() {
         } catch (e) {}
       }
     }
-    // Close the stream reader
     reader.cancel().catch(() => {});
   } catch (e) {
     if (e.name === 'AbortError') return; // cancelled, no error

@@ -247,8 +247,17 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
             "duration_ms": ms,
         }
         yield f"data: {json.dumps(result)}\n\n"
+        # Generator ends here — connection closes
 
-    return StreamingResponse(generate(), media_type="text/event-stream")
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # disable nginx buffering
+        },
+    )
 
 
 # ── Best Deals Leaderboard ─────────────────────────────────

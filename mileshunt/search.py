@@ -156,7 +156,7 @@ def search_route(
 
     client = _client()
     try:
-        results = client.search(filters)
+        results = client.search(filters, top_n=10)
     except Exception as e:
         log.warning("Search %s>%s failed: %s", origin, dest, e)
         return []
