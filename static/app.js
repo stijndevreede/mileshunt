@@ -194,6 +194,18 @@ async function loadLeaderboard() {
       const ratingClass = (d.rating || '').toLowerCase();
       const route = d.return_route ? `${d.route} / ${d.return_route}` : d.route;
       const foundBy = (d.found_by || '').split('@')[0];
+
+      // Flight date and days ahead
+      const flightDate = d.outbound_date || '';
+      let daysAhead = '';
+      if (d.found_at && d.outbound_date) {
+        const found = new Date(d.found_at);
+        const flight = new Date(d.outbound_date);
+        const diff = Math.round((flight - found) / (1000 * 60 * 60 * 24));
+        daysAhead = diff >= 0 ? `${diff}d ahead` : `${Math.abs(diff)}d ago`;
+      }
+      const foundDate = d.found_at ? d.found_at.split('T')[0] : '';
+
       return `<tr>
         <td>${i + 1}</td>
         <td class="lb-route">${route}</td>
@@ -201,7 +213,8 @@ async function loadLeaderboard() {
         <td class="lb-xp">${d.xp_total}</td>
         <td class="lb-per-xp">\u20AC${d.per_xp}</td>
         <td><span class="card-rating rating-${ratingClass}" style="font-size:10px">${d.rating}</span></td>
-        <td>${d.cabin}</td>
+        <td class="lb-date">${flightDate}<span class="lb-days">${daysAhead}</span></td>
+        <td class="lb-date">${foundDate}</td>
         <td class="lb-found-by">${foundBy}</td>
       </tr>`;
     }).join('');

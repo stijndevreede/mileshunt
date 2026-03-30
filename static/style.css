@@ -523,6 +523,8 @@ body {
 .lb-price { color: var(--text); }
 .lb-xp { color: var(--amber); font-weight: 600; }
 .lb-found-by { color: var(--text-dim); font-size: 11px; }
+.lb-date { font-size: 11px; white-space: nowrap; }
+.lb-days { display: block; font-size: 10px; color: var(--text-dim); }
 
 /* ── Login Modal ─────────────────────────── */
 
