@@ -11,7 +11,7 @@ from mileshunt.skyteam import FB_AIRLINES
 
 # XP per segment by distance band and cabin
 XP_TABLE: dict[str, dict[str, int]] = {
-    "domestic":  {"economy": 2, "premium": 4,  "business": 6,  "first": 6},
+    "domestic":  {"economy": 1, "premium": 2,  "business": 4,  "first": 4},
     "medium":    {"economy": 5, "premium": 10, "business": 15, "first": 15},
     "long1":     {"economy": 8, "premium": 16, "business": 24, "first": 24},
     "long2":     {"economy": 10, "premium": 20, "business": 30, "first": 30},
