@@ -185,11 +185,73 @@ COORDS: dict[str, tuple[float, float]] = {
     "YUL": (45.4706, -73.7408),
 }
 
-FRENCH_DOMESTIC = frozenset([
-    "NCE", "MRS", "TLS", "LYS", "BOD", "NTE", "BIA", "AJA",
-    "ORY", "CDG", "MPL", "RNS", "LIL", "SXB", "CFE",
-    "PGF", "EGC", "PUF", "RDZ", "AUR", "LRH", "DNR", "BVE",
-])
+# Country code per airport — used for domestic band detection
+AIRPORT_COUNTRY: dict[str, str] = {
+    # Netherlands
+    "AMS": "NL", "ZWE": "NL",
+    # France
+    "CDG": "FR", "ORY": "FR", "NCE": "FR", "MRS": "FR", "TLS": "FR",
+    "LYS": "FR", "BOD": "FR", "NTE": "FR", "BIA": "FR", "AJA": "FR",
+    "MPL": "FR", "RNS": "FR", "LIL": "FR", "SXB": "FR", "CFE": "FR",
+    "PGF": "FR", "EGC": "FR", "PUF": "FR", "RDZ": "FR", "AUR": "FR",
+    "LRH": "FR", "DNR": "FR", "BVE": "FR",
+    # DOM-TOM (French overseas — NOT domestic, they are long-haul)
+    "FDF": "MQ", "PTP": "GP", "CAY": "GF", "RUN": "RE",
+    # Norway
+    "OSL": "NO", "BGO": "NO", "SVG": "NO", "TRD": "NO", "TOS": "NO",
+    "BOO": "NO", "AES": "NO", "EVE": "NO", "ALF": "NO", "KKN": "NO",
+    "HAU": "NO", "MOL": "NO", "KSU": "NO", "FRO": "NO",
+    # Sweden
+    "ARN": "SE", "GOT": "SE", "MMX": "SE", "LLA": "SE", "UME": "SE",
+    "KRN": "SE", "OSD": "SE", "SDL": "SE", "VBY": "SE", "SFT": "SE",
+    # Denmark
+    "CPH": "DK", "BLL": "DK", "AAL": "DK",
+    # Faroe Islands (autonomous, separate from Denmark for flights)
+    "FAE": "FO",
+    # Spain
+    "MAD": "ES", "TFN": "ES", "LPA": "ES", "ACE": "ES", "FUE": "ES",
+    "PMI": "ES", "IBZ": "ES", "AGP": "ES", "ALC": "ES", "VLC": "ES",
+    "BIO": "ES", "SCQ": "ES", "SVQ": "ES", "BCN": "ES",
+    # Italy
+    "FCO": "IT", "NAP": "IT", "VCE": "IT", "BLQ": "IT", "FLR": "IT",
+    "CTA": "IT", "PMO": "IT", "BRI": "IT", "TRN": "IT", "GOA": "IT",
+    "MXP": "IT",
+    # Romania
+    "OTP": "RO", "CLJ": "RO", "TSR": "RO", "IAS": "RO", "SCV": "RO",
+    # Other European
+    "KRK": "PL", "WAW": "PL", "BUD": "HU", "ATH": "GR", "IST": "TR",
+    "BER": "DE", "DUB": "IE", "LIS": "PT", "OPO": "PT", "LHR": "GB",
+    "SOF": "BG", "BEG": "RS",
+    # North Africa
+    "TUN": "TN", "CMN": "MA", "RAK": "MA", "ALG": "DZ", "ORN": "DZ",
+    "RBA": "MA", "TNG": "MA",
+    # Middle East
+    "JED": "SA", "RUH": "SA", "BEY": "LB", "AMM": "JO", "DXB": "AE",
+    "CAI": "EG", "DOH": "QA", "TLV": "IL",
+    # US
+    "ATL": "US", "DTW": "US", "MSP": "US", "SEA": "US", "SLC": "US",
+    "BOS": "US", "JFK": "US", "LAX": "US", "MIA": "US",
+    # Asia
+    "ICN": "KR", "NRT": "JP", "KIX": "JP", "PVG": "CN", "XMN": "CN",
+    "HAN": "VN", "SGN": "VN", "CGK": "ID", "TPE": "TW",
+    "BKK": "TH", "SIN": "SG", "DEL": "IN",
+    # Africa
+    "DSS": "SN", "ABJ": "CI", "DLA": "CM", "BZV": "CG", "BKO": "ML",
+    "COO": "BJ", "CKY": "GN", "OUA": "BF", "NDJ": "TD", "TNR": "MG",
+    "CPT": "ZA", "NBO": "KE", "JNB": "ZA", "ACC": "GH", "DAR": "TZ", "LOS": "NG",
+    # Caribbean
+    "CUR": "CW", "AUA": "AW", "SXM": "SX", "BON": "BQ", "PBM": "SR",
+    # Americas
+    "MEX": "MX", "CUN": "MX", "BOG": "CO", "EZE": "AR", "GRU": "BR",
+    "LIM": "PE", "YUL": "CA",
+}
+
+
+def is_domestic(origin: str, dest: str) -> bool:
+    """Check if both airports are in the same country."""
+    c1 = AIRPORT_COUNTRY.get(origin)
+    c2 = AIRPORT_COUNTRY.get(dest)
+    return c1 is not None and c1 == c2
 
 CITY_NAMES: dict[str, str] = {
     "AMS": "Amsterdam", "CDG": "Paris CDG", "ORY": "Paris Orly",

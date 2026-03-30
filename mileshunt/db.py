@@ -129,7 +129,7 @@ def delete_user(user_id: int):
 
 # ── Sessions ────────────────────────────────────────────────
 
-def create_session(user_id: int, hours: int = 72) -> str:
+def create_session(user_id: int, hours: int = 720) -> str:  # 30 days
     token = secrets.token_urlsafe(32)
     now = datetime.utcnow()
     expires = now + timedelta(hours=hours)

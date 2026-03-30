@@ -8,7 +8,7 @@ Official multipliers: Economy 1x, Premium Eco 2x, Business 3x, First/La Premiere
 
 from dataclasses import dataclass
 
-from mileshunt.airports import FRENCH_DOMESTIC, distance_miles
+from mileshunt.airports import distance_miles, is_domestic
 from mileshunt.skyteam import FB_AIRLINES
 
 # XP per segment by distance band and cabin (source: flyingblue.com, March 2026)
@@ -31,7 +31,7 @@ BAND_LABELS = {
 
 def distance_band(origin: str, dest: str) -> str:
     """Classify a segment into a Flying Blue distance band."""
-    if origin in FRENCH_DOMESTIC and dest in FRENCH_DOMESTIC:
+    if is_domestic(origin, dest):
         return "domestic"
     miles = distance_miles(origin, dest)
     if miles is None:
