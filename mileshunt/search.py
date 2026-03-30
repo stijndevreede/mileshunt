@@ -146,23 +146,30 @@ def search_route(
             )
         )
 
-    filters = FlightSearchFilters(
-        trip_type=trip_type,
-        passenger_info=PassengerInfo(adults=1),
-        flight_segments=segments,
-        seat_type=seat,
-        sort_by=SortBy.CHEAPEST,
-    )
-
     client = _client()
-    try:
-        results = client.search(filters, top_n=10)
-    except Exception as e:
-        log.warning("Search %s>%s failed: %s", origin, dest, e)
+
+    # Search twice: cheapest (good prices) + duration-sorted (surfaces multi-stop)
+    all_results = []
+    for sort in [SortBy.CHEAPEST, SortBy.DURATION]:
+        filters = FlightSearchFilters(
+            trip_type=trip_type,
+            passenger_info=PassengerInfo(adults=1),
+            flight_segments=segments,
+            seat_type=seat,
+            sort_by=sort,
+        )
+        try:
+            results = client.search(filters, top_n=10)
+            if results:
+                all_results.extend(results)
+        except Exception as e:
+            log.warning("Search %s>%s sort=%s failed: %s", origin, dest, sort, e)
+
+    if not all_results:
         return []
 
-    if not results:
-        return []
+    # Deduplicate raw results before processing
+    results = all_results
 
     deals: list[FlightDeal] = []
 
@@ -250,9 +257,14 @@ def search_route(
                 rating=_rate(per_xp),
             ))
 
-    # Filter out deals with price 0 (Google Flights error)
+    # Filter out deals with price 0 (Google Flights error) and deduplicate
     deals = [d for d in deals if d.price > 0]
-    deals.sort(key=lambda d: d.per_xp)
+    seen: dict[str, FlightDeal] = {}
+    for d in deals:
+        key = f"{d.route}_{d.return_route}_{d.price}"
+        if key not in seen:
+            seen[key] = d
+    deals = sorted(seen.values(), key=lambda d: d.per_xp)
     return deals
 
 
