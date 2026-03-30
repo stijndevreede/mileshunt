@@ -1,4 +1,4 @@
-// XP Hunt — Frontend logic
+// XP Hunt — Frontend logic v3
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -8,6 +8,7 @@ let activeGroups = new Set();
 let expandedGroup = null;
 let userToken = localStorage.getItem('xphunt_token');
 let currentUser = null;
+let searchAbort = null; // AbortController for cancelling searches
 
 // ── Init ───────────────────────────────────────────────────
 
@@ -38,33 +39,36 @@ async function init() {
     $('#xp-ref').hidden = true;
   });
 
-  // Login modal
   $('#login-submit').addEventListener('click', doLogin);
   $('#login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  $('#login-close').addEventListener('click', () => { $('#login-modal').hidden = true; });
+  $('#login-close').addEventListener('click', closeLoginModal);
   $('#logout-btn').addEventListener('click', doLogout);
 
   onTripTypeChange();
 
-  // Check existing session
+  // Validate stored token on load
   if (userToken) {
     try {
       const r = await fetch(`/api/me?token=${userToken}`);
       if (r.ok) {
         currentUser = await r.json();
-        updateAuthUI();
       } else {
-        localStorage.removeItem('xphunt_token');
-        userToken = null;
+        clearAuth();
       }
     } catch (e) {
-      userToken = null;
+      clearAuth();
     }
   }
   updateAuthUI();
 }
 
 // ── Auth ───────────────────────────────────────────────────
+
+function clearAuth() {
+  localStorage.removeItem('xphunt_token');
+  userToken = null;
+  currentUser = null;
+}
 
 function updateAuthUI() {
   if (currentUser) {
@@ -76,6 +80,99 @@ function updateAuthUI() {
     $('#leaderboard').hidden = true;
   }
 }
+
+function requireAuth() {
+  // Returns true if logged in, false if login modal was shown
+  if (userToken && currentUser) return true;
+  showLoginModal();
+  return false;
+}
+
+function showLoginModal() {
+  // Cancel any running search
+  cancelSearch();
+  // Reset all search UI
+  resetSearchUI();
+
+  $('#login-modal').hidden = false;
+  $('#login-error').hidden = true;
+  $('#login-email').value = '';
+  $('#login-password').value = '';
+  setTimeout(() => $('#login-email').focus(), 50);
+}
+
+function closeLoginModal() {
+  $('#login-modal').hidden = true;
+}
+
+function cancelSearch() {
+  if (searchAbort) {
+    searchAbort.abort();
+    searchAbort = null;
+  }
+}
+
+function resetSearchUI() {
+  hideStatus();
+  $('#stats').hidden = true;
+  $('#results').innerHTML = '';
+  const btn = $('#btn-hunt');
+  btn.disabled = false;
+  btn.textContent = 'Hunt XP';
+}
+
+async function doLogin() {
+  const email = $('#login-email').value.trim();
+  const password = $('#login-password').value;
+  if (!email || !password) return;
+
+  $('#login-submit').disabled = true;
+  $('#login-submit').textContent = 'Logging in...';
+
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!r.ok) {
+      $('#login-error').textContent = 'Invalid email or password';
+      $('#login-error').hidden = false;
+      return;
+    }
+    const data = await r.json();
+    userToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('xphunt_token', userToken);
+    closeLoginModal();
+    updateAuthUI();
+    // Auto-start search after login
+    runHunt();
+  } catch (e) {
+    $('#login-error').textContent = 'Connection error';
+    $('#login-error').hidden = false;
+  } finally {
+    $('#login-submit').disabled = false;
+    $('#login-submit').textContent = 'Login';
+  }
+}
+
+async function doLogout() {
+  cancelSearch();
+  if (userToken) {
+    fetch(`/api/logout?token=${userToken}`, { method: 'POST' }).catch(() => {});
+  }
+  clearAuth();
+  updateAuthUI();
+  resetSearchUI();
+}
+
+function onTripTypeChange() {
+  const isReturn = $('#trip-type').value === 'return';
+  $('#return-field').style.display = isReturn ? '' : 'none';
+}
+
+// ── Leaderboard ────────────────────────────────────────────
 
 async function loadLeaderboard() {
   if (!userToken) return;
@@ -104,62 +201,7 @@ async function loadLeaderboard() {
       </tr>`;
     }).join('');
     $('#leaderboard').hidden = false;
-  } catch (e) {
-    console.error('Leaderboard error:', e);
-  }
-}
-
-function showLoginModal() {
-  $('#login-modal').hidden = false;
-  $('#login-error').hidden = true;
-  $('#login-email').value = '';
-  $('#login-password').value = '';
-  $('#login-email').focus();
-}
-
-async function doLogin() {
-  const email = $('#login-email').value.trim();
-  const password = $('#login-password').value;
-  if (!email || !password) return;
-
-  try {
-    const r = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!r.ok) {
-      $('#login-error').textContent = 'Invalid email or password';
-      $('#login-error').hidden = false;
-      return;
-    }
-    const data = await r.json();
-    userToken = data.token;
-    currentUser = data.user;
-    localStorage.setItem('xphunt_token', userToken);
-    $('#login-modal').hidden = true;
-    updateAuthUI();
-    // Auto-trigger search after login
-    runHunt();
-  } catch (e) {
-    $('#login-error').textContent = 'Connection error';
-    $('#login-error').hidden = false;
-  }
-}
-
-async function doLogout() {
-  if (userToken) {
-    fetch(`/api/logout?token=${userToken}`, { method: 'POST' }).catch(() => {});
-  }
-  localStorage.removeItem('xphunt_token');
-  userToken = null;
-  currentUser = null;
-  updateAuthUI();
-}
-
-function onTripTypeChange() {
-  const isReturn = $('#trip-type').value === 'return';
-  $('#return-field').style.display = isReturn ? '' : 'none';
+  } catch (e) {}
 }
 
 // ── Group Chips ────────────────────────────────────────────
@@ -178,10 +220,7 @@ function renderGroupChips() {
     if (g.default_on) activeGroups.add(g.id);
 
     chip.addEventListener('click', (e) => {
-      if (e.shiftKey) {
-        toggleGroupDetail(g, chip);
-        return;
-      }
+      if (e.shiftKey) { toggleGroupDetail(g, chip); return; }
       chip.classList.toggle('active');
       if (activeGroups.has(g.id)) activeGroups.delete(g.id);
       else activeGroups.add(g.id);
@@ -236,27 +275,8 @@ async function runHunt() {
   if (isReturn && !returnDate) { showStatus('Please select a return date.', false); return; }
   if (activeGroups.size === 0) { showStatus('Select at least one destination group.', false); return; }
 
-  // Login gate — only shown when pressing Hunt
-  if (!userToken) {
-    showLoginModal();
-    return;
-  }
-
-  // Verify token is still valid BEFORE starting the search
-  try {
-    const check = await fetch(`/api/me?token=${userToken}`);
-    if (!check.ok) {
-      localStorage.removeItem('xphunt_token');
-      userToken = null;
-      currentUser = null;
-      updateAuthUI();
-      showLoginModal();
-      return;
-    }
-  } catch (e) {
-    showLoginModal();
-    return;
-  }
+  // Auth gate: check in-memory first, then verify with server
+  if (!requireAuth()) return;
 
   const btn = $('#btn-hunt');
   btn.disabled = true;
@@ -264,6 +284,11 @@ async function runHunt() {
   showStatus('Connecting to Google Flights...', true);
   $('#stats').hidden = true;
   $('#results').innerHTML = '';
+
+  // Create abort controller for this search
+  cancelSearch();
+  searchAbort = new AbortController();
+  const signal = searchAbort.signal;
 
   try {
     const body = { origin, date, cabin, groups: [...activeGroups] };
@@ -273,14 +298,12 @@ async function runHunt() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal,
     });
 
     if (resp.status === 401) {
-      localStorage.removeItem('xphunt_token');
-      userToken = null;
-      currentUser = null;
+      clearAuth();
       updateAuthUI();
-      hideStatus();
       showLoginModal();
       return;
     }
@@ -290,35 +313,38 @@ async function runHunt() {
       return;
     }
 
-    // Read SSE stream
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
     while (true) {
+      if (signal.aborted) break;
       const { done, value } = await reader.read();
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
-      buffer = lines.pop(); // keep incomplete line
+      buffer = lines.pop();
 
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
-        const data = JSON.parse(line.slice(6));
-
-        if (data.type === 'progress') {
-          showProgress(data.current, data.total, data.route, data.flights_found);
-        } else if (data.type === 'done') {
-          hideStatus();
-          renderResults(data.deals, data.duration_ms);
-          loadLeaderboard();
-        }
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.type === 'progress') {
+            showProgress(data.current, data.total, data.route, data.flights_found);
+          } else if (data.type === 'done') {
+            hideStatus();
+            renderResults(data.deals, data.duration_ms);
+            loadLeaderboard();
+          }
+        } catch (e) {}
       }
     }
   } catch (e) {
+    if (e.name === 'AbortError') return; // cancelled, no error
     showStatus(`Network error: ${e.message}`, false);
   } finally {
+    searchAbort = null;
     btn.disabled = false;
     btn.textContent = 'Hunt XP';
   }
@@ -411,9 +437,7 @@ function createCard(deal, rank) {
     : '<span class="fb-badge fb-no">Mixed</span>';
 
   const isRT = deal.trip_type === 'return';
-  const tripBadge = isRT
-    ? '<span class="card-trip-badge">RT</span>'
-    : '<span class="card-trip-badge">OW</span>';
+  const tripBadge = isRT ? '<span class="card-trip-badge">RT</span>' : '<span class="card-trip-badge">OW</span>';
 
   let breakdownHTML = renderBreakdown(deal.xp_breakdown, 'Outbound');
   if (isRT && deal.return_xp_breakdown && deal.return_xp_breakdown.length > 0) {
@@ -421,8 +445,7 @@ function createCard(deal, rank) {
   }
 
   const returnRouteHTML = isRT && deal.return_route
-    ? `<div class="card-return-route">&larr; ${deal.return_route}</div>`
-    : '';
+    ? `<div class="card-return-route">&larr; ${deal.return_route}</div>` : '';
 
   const durStr = isRT
     ? `${fmtDuration(deal.duration)} + ${fmtDuration(deal.return_duration)}`
@@ -459,7 +482,6 @@ function createCard(deal, rank) {
     <div class="card-breakdown">${breakdownHTML}</div>
     <div class="card-airlines">${airlineStr} ${fbBadge} &middot; ${durStr}</div>
   `;
-
   return card;
 }
 
