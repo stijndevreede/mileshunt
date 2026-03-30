@@ -250,6 +250,8 @@ def search_route(
                 rating=_rate(per_xp),
             ))
 
+    # Filter out deals with price 0 (Google Flights error)
+    deals = [d for d in deals if d.price > 0]
     deals.sort(key=lambda d: d.per_xp)
     return deals
 

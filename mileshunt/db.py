@@ -180,7 +180,7 @@ def save_best_deals(deals: list[dict], user_email: str | None, cabin: str, outbo
     """Save the top deals from a search to the all-time leaderboard."""
     with get_db() as conn:
         for d in deals[:20]:  # save top 20 from each search
-            if d.get("xp_total", 0) <= 0:
+            if d.get("xp_total", 0) <= 0 or d.get("price", 0) <= 0:
                 continue
             conn.execute(
                 """INSERT INTO best_deals
