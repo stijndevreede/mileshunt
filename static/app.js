@@ -1,4 +1,4 @@
-// XP Hunt — Frontend logic v3
+// XP Hunt — Frontend logic v5 (2026-03-30)
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -89,12 +89,9 @@ function requireAuth() {
 }
 
 function showLoginModal() {
-  // Cancel any running search
   cancelSearch();
-  // Reset all search UI
   resetSearchUI();
-
-  $('#login-modal').hidden = false;
+  openLoginModal();
   $('#login-error').hidden = true;
   $('#login-email').value = '';
   $('#login-password').value = '';
@@ -102,7 +99,15 @@ function showLoginModal() {
 }
 
 function closeLoginModal() {
-  $('#login-modal').hidden = true;
+  const modal = $('#login-modal');
+  modal.hidden = true;
+  modal.style.display = 'none';
+}
+
+function openLoginModal() {
+  const modal = $('#login-modal');
+  modal.hidden = false;
+  modal.style.display = '';
 }
 
 function cancelSearch() {
