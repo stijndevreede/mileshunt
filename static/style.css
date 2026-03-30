@@ -442,12 +442,34 @@ body {
 .seg-band { color: var(--text-dim); font-size: 10px; }
 .seg-no-fb { color: var(--red); font-size: 10px; }
 
-.card-airlines {
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 8px 16px 12px;
+  gap: 8px;
+}
+.card-airlines-text {
   font-size: 11px;
   color: var(--text-dim);
 }
-.card-airlines .fb-badge {
+.btn-flights {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber-dim);
+  text-decoration: none;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.btn-flights:hover {
+  color: var(--amber);
+  border-color: var(--amber-dim);
+  background: rgba(240, 180, 41, 0.08);
+}
+.card-airlines-text .fb-badge {
   display: inline-block;
   padding: 1px 6px;
   border-radius: 8px;

@@ -422,6 +422,22 @@ function renderBreakdown(segments, label) {
   return html;
 }
 
+function buildGoogleFlightsUrl(deal) {
+  // Build Google Flights search URL
+  const origin = deal.origin;
+  const dest = deal.dest;
+  const date = deal.legs?.[0]?.departure?.split('T')[0] || '';
+  const retDate = deal.return_legs?.[0]?.departure?.split('T')[0] || '';
+  const cabinMap = { economy: 'economy', premium: 'premiumeconomy', business: 'business', first: 'first' };
+  const isRT = deal.trip_type === 'return';
+
+  let url = `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${dest}`;
+  if (date) url += `+on+${date}`;
+  if (isRT && retDate) url += `+return+${retDate}`;
+  url += '&curr=EUR';
+  return url;
+}
+
 function createCard(deal, rank) {
   const card = document.createElement('div');
   const ratingClass = deal.rating.toLowerCase();
@@ -476,7 +492,10 @@ function createCard(deal, rank) {
       </div>
     </div>
     <div class="card-breakdown">${breakdownHTML}</div>
-    <div class="card-airlines">${airlineStr} ${fbBadge} &middot; ${durStr}</div>
+    <div class="card-footer">
+      <span class="card-airlines-text">${airlineStr} ${fbBadge} &middot; ${durStr}</span>
+      <a href="${buildGoogleFlightsUrl(deal)}" target="_blank" rel="noopener" class="btn-flights">Google Flights &rarr;</a>
+    </div>
   `;
   return card;
 }
