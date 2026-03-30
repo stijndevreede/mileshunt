@@ -257,8 +257,8 @@ def search_route(
                 rating=_rate(per_xp),
             ))
 
-    # Filter out deals with price 0 (Google Flights error) and deduplicate
-    deals = [d for d in deals if d.price > 0]
+    # Filter out price=0 (error) and 0 XP (non-FB carriers)
+    deals = [d for d in deals if d.price > 0 and d.xp_total > 0]
     seen: dict[str, FlightDeal] = {}
     for d in deals:
         key = f"{d.route}_{d.return_route}_{d.price}"
