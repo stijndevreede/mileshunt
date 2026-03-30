@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MilesHunt — Flying Blue XP Optimizer</title>
+  <title>XP Hunt — Flying Blue XP Optimizer</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
   <header class="header">
     <div class="header-left">
-      <h1 class="logo">MilesHunt</h1>
+      <h1 class="logo">XP Hunt</h1>
       <span class="subtitle">Flying Blue XP Optimizer</span>
     </div>
     <div class="header-right">
-      <button id="xp-ref-toggle" class="btn btn-ghost" title="XP Reference">XP Table</button>
+      <button id="tips-toggle" class="btn btn-ghost">XP Tips</button>
+      <button id="xp-ref-toggle" class="btn btn-ghost">XP Table</button>
     </div>
   </header>
 
   <!-- XP Reference Panel -->
   <div id="xp-ref" class="panel xp-panel" hidden>
     <div class="panel-header">
-      <span class="panel-title">XP per Segment — Business Class</span>
+      <span class="panel-title">Flying Blue XP per Segment</span>
       <button class="btn-close" onclick="document.getElementById('xp-ref').hidden=true">&times;</button>
     </div>
     <table class="xp-table">
@@ -29,32 +30,92 @@
         <tr><th>Band</th><th>Eco</th><th>Prem</th><th class="hl">Biz</th><th>First</th></tr>
       </thead>
       <tbody>
-        <tr><td>Domestic FR</td><td>1</td><td>2</td><td class="hl">4</td><td>4</td></tr>
-        <tr><td>&lt;2 000 mi</td><td>5</td><td>10</td><td class="hl">15</td><td>15</td></tr>
-        <tr><td>2 000–3 500 mi</td><td>8</td><td>16</td><td class="hl">24</td><td>24</td></tr>
-        <tr><td>3 500–5 000 mi</td><td>10</td><td>20</td><td class="hl">30</td><td>30</td></tr>
-        <tr><td>5 000+ mi</td><td>12</td><td>24</td><td class="hl">36</td><td>36</td></tr>
+        <tr><td>Domestic FR</td><td>2</td><td>4</td><td class="hl">6</td><td>10</td></tr>
+        <tr><td>&lt;2 000 mi</td><td>5</td><td>10</td><td class="hl">15</td><td>25</td></tr>
+        <tr><td>2 000–3 500 mi</td><td>8</td><td>16</td><td class="hl">24</td><td>40</td></tr>
+        <tr><td>3 500–5 000 mi</td><td>10</td><td>20</td><td class="hl">30</td><td>50</td></tr>
+        <tr><td>5 000+ mi</td><td>12</td><td>24</td><td class="hl">36</td><td>60</td></tr>
       </tbody>
     </table>
-    <p class="xp-note">XP is earned per segment. More stopovers = more segments = more XP.</p>
+    <p class="xp-note">
+      XP is earned <strong>per segment</strong>. More stopovers = more segments = more XP.<br>
+      Multiplier: Eco 1x, Premium 2x, Business 3x, First/La Premiere 5x.<br>
+      Basic fares earn reduced 2 XP/segment. Light/Standard/Flex earn full XP.
+    </p>
+  </div>
+
+  <!-- XP Tips Panel -->
+  <div id="tips-panel" class="panel tips-panel" hidden>
+    <div class="panel-header">
+      <span class="panel-title">Maximize Your XP</span>
+      <button class="btn-close" onclick="document.getElementById('tips-panel').hidden=true">&times;</button>
+    </div>
+    <div class="tips-content">
+      <div class="tip-section">
+        <h4>Multi-Segment Strategy</h4>
+        <p>XP is per segment, not per trip. AMS-CDG-NCE in Business = 2 segments = 30 XP vs. AMS-NCE direct = 15 XP. Always prefer connections over direct flights.</p>
+      </div>
+      <div class="tip-section">
+        <h4>Antwerp Hack (ZWE)</h4>
+        <p>KLM Air&Rail from Antwerp (ZWE) to AMS counts as a flight segment earning 15 XP in Business. ZWE-AMS-CDG-TUN = 3 segments/direction = 90 XP RT. Often cheaper than originating from AMS.</p>
+      </div>
+      <div class="tip-section">
+        <h4>SAF Contributions</h4>
+        <p>Sustainable Aviation Fuel contributions on KLM.com/AirFrance.com earn ~1 XP per &euro;10. This is the only non-flight method that also earns UXP (Ultimate XP for top-tier status).</p>
+      </div>
+      <div class="tip-section">
+        <h4>Credit Card XP</h4>
+        <p><strong>NL/FR Amex Silver:</strong> 15 XP/year (&euro;84). <strong>Gold:</strong> 30 XP/year (&euro;198).<br>
+        <strong>US BoA Visa:</strong> Up to 160 XP/year ($89) &mdash; the most powerful XP card.</p>
+      </div>
+      <div class="tip-section">
+        <h4>La Premiere Feeder Trick</h4>
+        <p>When booking First Class (La Premiere) with connections, all connecting segments count as First Class for XP &mdash; even if you fly Business on the feeder leg. Turns 15 XP into 25 XP per European segment.</p>
+      </div>
+      <div class="tip-section">
+        <h4>Earning Rules</h4>
+        <ul>
+          <li>AF/KL flights earn XP + UXP. Partner flights earn XP only, no UXP.</li>
+          <li>Status level does NOT affect XP earned &mdash; no status bonuses.</li>
+          <li>Award tickets earn 0 XP. Miles+Cash earns full XP.</li>
+          <li>Avoid Basic fares (2 XP only). Light/Standard/Flex all earn the same.</li>
+        </ul>
+      </div>
+      <div class="tip-section">
+        <h4>Status Thresholds</h4>
+        <p>Silver: 100 XP &bull; Gold: 180 XP &bull; Platinum: 300 XP &bull; Ultimate: 900 UXP<br>
+        Max 300 XP rolls over to next year.</p>
+      </div>
+    </div>
   </div>
 
   <!-- Search Controls -->
   <section class="controls">
     <div class="controls-row">
       <div class="field">
-        <label for="origin">Origin</label>
-        <input id="origin" type="text" value="AMS" maxlength="3" class="input-iata">
+        <label for="origin">From</label>
+        <input id="origin" type="text" value="AMS" maxlength="3" class="input-iata" placeholder="AMS">
       </div>
       <div class="field">
-        <label for="date">Date</label>
+        <label for="trip-type">Trip</label>
+        <select id="trip-type" class="input-select input-select-sm">
+          <option value="oneway">One-way</option>
+          <option value="return" selected>Return</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="date">Outbound</label>
         <input id="date" type="date" class="input-date">
+      </div>
+      <div class="field" id="return-field">
+        <label for="return-date">Return</label>
+        <input id="return-date" type="date" class="input-date">
       </div>
       <div class="field">
         <label for="cabin">Cabin</label>
         <select id="cabin" class="input-select">
           <option value="economy">Economy</option>
-          <option value="premium">Premium Economy</option>
+          <option value="premium">Premium Eco</option>
           <option value="business" selected>Business</option>
           <option value="first">First</option>
         </select>
@@ -66,6 +127,7 @@
       <span class="groups-label">Destinations:</span>
       <div id="group-chips" class="group-chips"></div>
     </div>
+    <div id="group-detail" class="group-detail" hidden></div>
   </section>
 
   <!-- Status -->
@@ -83,7 +145,7 @@
   <section id="results" class="results"></section>
 
   <footer class="footer">
-    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; No API key required &middot; Prices in USD from Google Flights</p>
+    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; No API key required &middot; Prices in USD</p>
   </footer>
 
   <script src="/static/app.js"></script>

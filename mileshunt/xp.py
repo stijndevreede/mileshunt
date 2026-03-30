@@ -2,6 +2,8 @@
 
 XP is earned per flight segment based on distance band and cabin class.
 More stopovers = more segments = more XP.
+
+Official multipliers: Economy 1x, Premium Eco 2x, Business 3x, First/La Premiere 5x.
 """
 
 from dataclasses import dataclass
@@ -9,13 +11,13 @@ from dataclasses import dataclass
 from mileshunt.airports import FRENCH_DOMESTIC, distance_miles
 from mileshunt.skyteam import FB_AIRLINES
 
-# XP per segment by distance band and cabin
+# XP per segment by distance band and cabin (source: flyingblue.com, March 2026)
 XP_TABLE: dict[str, dict[str, int]] = {
-    "domestic":  {"economy": 1, "premium": 2,  "business": 4,  "first": 4},
-    "medium":    {"economy": 5, "premium": 10, "business": 15, "first": 15},
-    "long1":     {"economy": 8, "premium": 16, "business": 24, "first": 24},
-    "long2":     {"economy": 10, "premium": 20, "business": 30, "first": 30},
-    "long3":     {"economy": 12, "premium": 24, "business": 36, "first": 36},
+    "domestic":  {"economy": 2, "premium": 4,  "business": 6,  "first": 10},
+    "medium":    {"economy": 5, "premium": 10, "business": 15, "first": 25},
+    "long1":     {"economy": 8, "premium": 16, "business": 24, "first": 40},
+    "long2":     {"economy": 10, "premium": 20, "business": 30, "first": 50},
+    "long3":     {"economy": 12, "premium": 24, "business": 36, "first": 60},
 }
 
 BAND_LABELS = {
