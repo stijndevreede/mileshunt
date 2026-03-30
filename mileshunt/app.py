@@ -182,34 +182,37 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
 
     def generate():
         t0 = time.time()
-        all_deals: list[FlightDeal] = []
+        # Track all unique deals, keyed for dedup
+        unique: dict[str, FlightDeal] = {}
         total = len(destinations)
+        sent_keys: set[str] = set()
 
         for i, dest in enumerate(destinations):
             city = CITY_NAMES.get(dest, dest)
 
-            # Send progress event
+            new_deals: list[dict] = []
+            try:
+                deals = search_route(origin, dest, req.date, req.cabin, req.return_date)
+                for d in deals:
+                    key = f"{d.route}_{d.return_route}_{d.price}"
+                    if key not in unique:
+                        unique[key] = d
+                        if key not in sent_keys:
+                            new_deals.append(d.to_dict())
+                            sent_keys.add(key)
+            except Exception as e:
+                log.warning("Hunt %s>%s error: %s", origin, dest, e)
+
+            # Send progress + any new deals found this round
             progress = {
                 "type": "progress",
                 "current": i + 1,
                 "total": total,
                 "route": f"{origin} > {city} ({dest})",
-                "flights_found": len(all_deals),
+                "flights_found": len(unique),
+                "new_deals": new_deals,
             }
             yield f"data: {json.dumps(progress)}\n\n"
-
-            try:
-                deals = search_route(origin, dest, req.date, req.cabin, req.return_date)
-                all_deals.extend(deals)
-            except Exception as e:
-                log.warning("Hunt %s>%s error: %s", origin, dest, e)
-
-        # Deduplicate
-        unique: dict[str, FlightDeal] = {}
-        for d in all_deals:
-            key = f"{d.route}_{d.return_route}_{d.price}"
-            if key not in unique:
-                unique[key] = d
 
         sorted_deals = sorted(unique.values(), key=lambda d: d.per_xp)
         ms = int((time.time() - t0) * 1000)
@@ -238,16 +241,14 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
                 user["email"], req.cabin, req.date,
             )
 
-        # Send final results
+        # Send done signal (no deals — frontend already has them all)
         result = {
             "type": "done",
-            "deals": [d.to_dict() for d in sorted_deals],
             "count": len(sorted_deals),
             "best_per_xp": sorted_deals[0].per_xp if sorted_deals else None,
             "duration_ms": ms,
         }
         yield f"data: {json.dumps(result)}\n\n"
-        # Generator ends here — connection closes
 
     return StreamingResponse(
         generate(),

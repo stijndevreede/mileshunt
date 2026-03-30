@@ -8,7 +8,8 @@ let activeGroups = new Set();
 let expandedGroup = null;
 let userToken = localStorage.getItem('xphunt_token');
 let currentUser = null;
-let searchAbort = null; // AbortController for cancelling searches
+let searchAbort = null;
+let allDeals = []; // accumulated deals during search
 
 // ── Init ───────────────────────────────────────────────────
 
@@ -287,16 +288,15 @@ async function runHunt() {
       return;
     }
 
+    allDeals = [];
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
     let searchDone = false;
-    let lastProgress = Date.now();
 
     while (!searchDone) {
       if (signal.aborted) break;
 
-      // Timeout: if no data for 30s after last progress, assume done
       const readPromise = reader.read();
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('stream_timeout')), 30000)
@@ -306,15 +306,11 @@ async function runHunt() {
       try {
         ({ done, value } = await Promise.race([readPromise, timeoutPromise]));
       } catch (e) {
-        if (e.message === 'stream_timeout') {
-          console.warn('SSE stream timed out, closing');
-          break;
-        }
+        if (e.message === 'stream_timeout') break;
         throw e;
       }
 
       if (done) break;
-      lastProgress = Date.now();
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
@@ -325,10 +321,26 @@ async function runHunt() {
         try {
           const data = JSON.parse(line.slice(6));
           if (data.type === 'progress') {
+            // Add new deals incrementally
+            if (data.new_deals && data.new_deals.length > 0) {
+              allDeals.push(...data.new_deals);
+              allDeals.sort((a, b) => a.per_xp - b.per_xp);
+              renderResults(allDeals);
+            }
             showProgress(data.current, data.total, data.route, data.flights_found);
           } else if (data.type === 'done') {
             hideStatus();
-            renderResults(data.deals, data.duration_ms);
+            allDeals.sort((a, b) => a.per_xp - b.per_xp);
+            if (allDeals.length === 0) {
+              $('#results').innerHTML = `
+                <div class="empty">
+                  <h3>No XP-earning flights found</h3>
+                  <p>Try different dates or enable more destination groups.</p>
+                </div>`;
+            } else {
+              renderResults(allDeals);
+            }
+            updateStats(allDeals);
             searchDone = true;
             break;
           }
@@ -376,25 +388,26 @@ function hideStatus() {
 
 // ── Render Results ─────────────────────────────────────────
 
-function renderResults(deals, durationMs) {
-  const container = $('#results');
-  container.innerHTML = '';
-
+function updateStats(deals) {
   if (!deals || deals.length === 0) {
-    container.innerHTML = `
-      <div class="empty">
-        <h3>No XP-earning flights found</h3>
-        <p>Try different dates or enable more destination groups.</p>
-      </div>`;
+    $('#stats').hidden = true;
     return;
   }
-
   const statsBar = $('#stats');
   statsBar.hidden = false;
   $('#stat-routes').textContent = deals.length;
   $('#stat-best').textContent = `\u20AC${deals[0].per_xp}`;
   $('#stat-multi').textContent = deals.filter(d => d.total_segments >= 4).length;
   $('#stat-excellent').textContent = deals.filter(d => d.rating === 'EXCELLENT').length;
+}
+
+function renderResults(deals) {
+  const container = $('#results');
+  container.innerHTML = '';
+
+  if (!deals || deals.length === 0) return;
+
+  updateStats(deals);
 
   deals.forEach((deal, i) => {
     container.appendChild(createCard(deal, i + 1));
