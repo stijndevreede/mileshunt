@@ -74,12 +74,14 @@ DEST_GROUPS: list[DestGroup] = [
         label="Scandinavia (SAS)",
         description="SAS hubs + main cities via CPH/OSL/ARN",
         destinations=["CPH", "OSL", "ARN", "GOT", "BGO", "SVG", "TRD", "TOS", "MMX", "BLL", "AAL"],
+        default_on=True,
     ),
     DestGroup(
         id="scandinavia_small",
         label="Scandinavia remote",
         description="Max stops! Remote airports via CPH/OSL/ARN",
         destinations=["LLA", "UME", "BOO", "AES", "EVE", "ALF", "KKN", "HAU", "MOL", "KSU", "FRO", "KRN", "OSD", "SDL", "VBY", "SFT", "FAE"],
+        default_on=True,
     ),
     DestGroup(
         id="spain_air_europa",
