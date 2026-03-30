@@ -423,18 +423,20 @@ function renderBreakdown(segments, label) {
 }
 
 function buildGoogleFlightsUrl(deal) {
-  // Build Google Flights search URL
   const origin = deal.origin;
   const dest = deal.dest;
   const date = deal.legs?.[0]?.departure?.split('T')[0] || '';
   const retDate = deal.return_legs?.[0]?.departure?.split('T')[0] || '';
-  const cabinMap = { economy: 'economy', premium: 'premiumeconomy', business: 'business', first: 'first' };
   const isRT = deal.trip_type === 'return';
+  const cabin = $('#cabin').value;
+  // Google Flights cabin: 1=economy, 2=premium eco, 3=business, 4=first
+  const cabinNum = { economy: 1, premium: 2, business: 3, first: 4 }[cabin] || 3;
+  const tripType = isRT ? 1 : 2; // 1=round trip, 2=one way
 
-  let url = `https://www.google.com/travel/flights?q=flights+from+${origin}+to+${dest}`;
+  let url = `https://www.google.com/travel/flights?q=Flights+to+${dest}+from+${origin}`;
   if (date) url += `+on+${date}`;
   if (isRT && retDate) url += `+return+${retDate}`;
-  url += '&curr=EUR';
+  url += `&curr=EUR&seat=${cabinNum}&trip=${tripType}`;
   return url;
 }
 
