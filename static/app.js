@@ -74,10 +74,10 @@ function updateAuthUI() {
   if (currentUser) {
     $('#user-info').hidden = false;
     $('#user-name').textContent = currentUser.name;
-    loadLeaderboard();
+    if ($('#best-deals-link')) $('#best-deals-link').hidden = false;
   } else {
     $('#user-info').hidden = true;
-    $('#leaderboard').hidden = true;
+    if ($('#best-deals-link')) $('#best-deals-link').hidden = true;
   }
 }
 
@@ -151,8 +151,6 @@ async function doLogin() {
     localStorage.setItem('xphunt_token', userToken);
     closeLoginModal();
     updateAuthUI();
-    // Auto-start search after login
-    runHunt();
   } catch (e) {
     $('#login-error').textContent = 'Connection error';
     $('#login-error').hidden = false;
@@ -179,48 +177,6 @@ function onTripTypeChange() {
 
 // ── Leaderboard ────────────────────────────────────────────
 
-async function loadLeaderboard() {
-  if (!userToken) return;
-  try {
-    const r = await fetch(`/api/best-deals?token=${userToken}`);
-    if (!r.ok) return;
-    const deals = await r.json();
-    if (!deals || deals.length === 0) {
-      $('#leaderboard').hidden = true;
-      return;
-    }
-    const tbody = $('#leaderboard-body');
-    tbody.innerHTML = deals.map((d, i) => {
-      const ratingClass = (d.rating || '').toLowerCase();
-      const route = d.return_route ? `${d.route} / ${d.return_route}` : d.route;
-      const foundBy = (d.found_by || '').split('@')[0];
-
-      // Flight date and days ahead
-      const flightDate = d.outbound_date || '';
-      let daysAhead = '';
-      if (d.found_at && d.outbound_date) {
-        const found = new Date(d.found_at);
-        const flight = new Date(d.outbound_date);
-        const diff = Math.round((flight - found) / (1000 * 60 * 60 * 24));
-        daysAhead = diff >= 0 ? `${diff}d ahead` : `${Math.abs(diff)}d ago`;
-      }
-      const foundDate = d.found_at ? d.found_at.split('T')[0] : '';
-
-      return `<tr>
-        <td>${i + 1}</td>
-        <td class="lb-route">${route}</td>
-        <td class="lb-price">\u20AC${Math.round(d.price)}</td>
-        <td class="lb-xp">${d.xp_total}</td>
-        <td class="lb-per-xp">\u20AC${d.per_xp}</td>
-        <td><span class="card-rating rating-${ratingClass}" style="font-size:10px">${d.rating}</span></td>
-        <td class="lb-date">${flightDate}<span class="lb-days">${daysAhead}</span></td>
-        <td class="lb-date">${foundDate}</td>
-        <td class="lb-found-by">${foundBy}</td>
-      </tr>`;
-    }).join('');
-    $('#leaderboard').hidden = false;
-  } catch (e) {}
-}
 
 // ── Group Chips ────────────────────────────────────────────
 
@@ -334,8 +290,9 @@ async function runHunt() {
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let searchDone = false;
 
-    while (true) {
+    while (!searchDone) {
       if (signal.aborted) break;
       const { done, value } = await reader.read();
       if (done) break;
@@ -353,11 +310,14 @@ async function runHunt() {
           } else if (data.type === 'done') {
             hideStatus();
             renderResults(data.deals, data.duration_ms);
-            loadLeaderboard();
+            searchDone = true;
+            break;
           }
         } catch (e) {}
       }
     }
+    // Close the stream reader
+    reader.cancel().catch(() => {});
   } catch (e) {
     if (e.name === 'AbortError') return; // cancelled, no error
     showStatus(`Network error: ${e.message}`, false);

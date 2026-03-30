@@ -24,6 +24,23 @@ COORDS: dict[str, tuple[float, float]] = {
     "LIL": (50.5633, 3.0868),
     "SXB": (48.5383, 7.6282),
     "CFE": (45.7867, 3.1691),
+    "PGF": (42.7404, 2.8707),
+    "EGC": (44.8213, 0.5186),
+    "PUF": (43.3800, -0.4186),
+    "RDZ": (44.4079, 2.4827),
+    "AUR": (44.8914, 2.4219),
+    "LRH": (46.1792, -1.1953),
+    "DNR": (48.5877, -2.0800),
+    "BVE": (45.0397, 1.4856),
+    # Italy
+    "VCE": (45.5053, 12.3519),
+    "BLQ": (44.5354, 11.2887),
+    "FLR": (43.8100, 11.2051),
+    "CTA": (37.4668, 15.0664),
+    "PMO": (38.1760, 13.0910),
+    "BRI": (41.1389, 16.7606),
+    "TRN": (45.2008, 7.6497),
+    "GOA": (44.4133, 8.8375),
     # North Africa
     "TUN": (36.8510, 10.2272),
     "CMN": (33.3675, -7.5898),
@@ -171,6 +188,7 @@ COORDS: dict[str, tuple[float, float]] = {
 FRENCH_DOMESTIC = frozenset([
     "NCE", "MRS", "TLS", "LYS", "BOD", "NTE", "BIA", "AJA",
     "ORY", "CDG", "MPL", "RNS", "LIL", "SXB", "CFE",
+    "PGF", "EGC", "PUF", "RDZ", "AUR", "LRH", "DNR", "BVE",
 ])
 
 CITY_NAMES: dict[str, str] = {
@@ -198,6 +216,10 @@ CITY_NAMES: dict[str, str] = {
     "MEX": "Mexico City", "EZE": "Buenos Aires", "GRU": "Sao Paulo",
     "YUL": "Montreal", "BOG": "Bogota", "LIM": "Lima",
     "ZWE": "Antwerp",
+    "PGF": "Perpignan", "EGC": "Bergerac", "PUF": "Pau", "RDZ": "Rodez",
+    "AUR": "Aurillac", "LRH": "La Rochelle", "DNR": "Dinard", "BVE": "Brive",
+    "VCE": "Venice", "BLQ": "Bologna", "FLR": "Florence", "CTA": "Catania",
+    "PMO": "Palermo", "BRI": "Bari", "TRN": "Turin", "GOA": "Genoa",
 }
 
 

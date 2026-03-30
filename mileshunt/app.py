@@ -308,6 +308,14 @@ def admin_delete_user(user_id: int, token: str):
     return {"ok": True}
 
 
+@app.get("/best")
+def best_page():
+    return FileResponse(
+        str(STATIC_DIR / "best.html"),
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
+
+
 @app.get("/admin")
 def admin_page():
     return FileResponse(str(STATIC_DIR / "admin.html"))

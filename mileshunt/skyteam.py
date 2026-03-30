@@ -58,6 +58,18 @@ DEST_GROUPS: list[DestGroup] = [
         default_on=True,
     ),
     DestGroup(
+        id="french_small",
+        label="French small airports",
+        description="Max stops! Small French airports via CDG = 3+ segments",
+        destinations=["MPL", "RNS", "LIL", "SXB", "CFE", "PGF", "EGC", "PUF", "RDZ", "AUR", "LRH", "DNR", "BVE"],
+    ),
+    DestGroup(
+        id="italy_via_cdg",
+        label="Italy via CDG",
+        description="Italian cities via CDG for multi-stop XP",
+        destinations=["FCO", "NAP", "VCE", "BLQ", "FLR", "CTA", "PMO", "BRI", "TRN", "GOA"],
+    ),
+    DestGroup(
         id="scandinavia",
         label="Scandinavia (SAS)",
         description="SAS hubs + main cities via CPH/OSL/ARN",

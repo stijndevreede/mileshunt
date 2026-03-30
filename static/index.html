@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XP Hunt — Flying Blue XP Optimizer</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/style.css?v=6">
+  <link rel="stylesheet" href="/static/style.css?v=7">
 </head>
 <body>
 
@@ -18,6 +18,7 @@
         <span id="user-name" class="user-name"></span>
         <button id="logout-btn" class="btn btn-ghost btn-sm">Logout</button>
       </span>
+      <a href="/best" class="btn btn-ghost" id="best-deals-link" hidden>Best Deals</a>
       <button id="tips-toggle" class="btn btn-ghost">XP Tips</button>
       <button id="xp-ref-toggle" class="btn btn-ghost">XP Table</button>
     </div>
@@ -145,19 +146,6 @@
     <div class="stat"><span class="stat-value" id="stat-excellent">0</span><span class="stat-label">Excellent</span></div>
   </div>
 
-  <!-- Best Deals Leaderboard -->
-  <div id="leaderboard" class="leaderboard" hidden>
-    <div class="leaderboard-header">
-      <span class="panel-title">Best Deals Ever Found</span>
-    </div>
-    <table class="leaderboard-table">
-      <thead>
-        <tr><th>#</th><th>Route</th><th>Price</th><th>XP</th><th>&euro;/XP</th><th>Rating</th><th>Flight</th><th>Booked</th><th>By</th></tr>
-      </thead>
-      <tbody id="leaderboard-body"></tbody>
-    </table>
-  </div>
-
   <!-- Results -->
   <section id="results" class="results"></section>
 
@@ -187,6 +175,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=7"></script>
 </body>
 </html>

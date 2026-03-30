@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Best Deals — XP Hunt</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="stylesheet" href="/static/style.css?v=7">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <a href="/" style="text-decoration:none"><img src="/static/logo.svg" alt="XP Hunt" class="logo-img"></a>
+    </div>
+    <div class="header-right">
+      <a href="/" class="btn btn-ghost">Search</a>
+    </div>
+  </header>
+
+  <div class="best-page">
+    <div class="best-header">
+      <h2 class="best-title">Best Deals Ever Found</h2>
+      <p class="best-desc">Top deals across all users, ranked by &euro;/XP. Updated after every search.</p>
+    </div>
+
+    <div id="loading" class="best-loading">
+      <div class="spinner"></div> Loading deals...
+    </div>
+
+    <div id="no-auth" class="best-empty" hidden>
+      <p>Login on the <a href="/">search page</a> to view the leaderboard.</p>
+    </div>
+
+    <div id="no-deals" class="best-empty" hidden>
+      <p>No deals found yet. Run a search first!</p>
+    </div>
+
+    <table id="deals-table" class="leaderboard-table best-table" hidden>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Route</th>
+          <th>Price</th>
+          <th>XP</th>
+          <th>&euro;/XP</th>
+          <th>Rating</th>
+          <th>Flight Date</th>
+          <th>Searched</th>
+          <th>Found by</th>
+        </tr>
+      </thead>
+      <tbody id="deals-body"></tbody>
+    </table>
+  </div>
+
+  <footer class="footer">
+    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; Prices in EUR</p>
+  </footer>
+
+  <script>
+    const token = localStorage.getItem('xphunt_token');
+
+    async function load() {
+      if (!token) {
+        document.getElementById('loading').hidden = true;
+        document.getElementById('no-auth').hidden = false;
+        return;
+      }
+
+      try {
+        const r = await fetch(`/api/best-deals?token=${token}`);
+        document.getElementById('loading').hidden = true;
+
+        if (r.status === 401) {
+          document.getElementById('no-auth').hidden = false;
+          return;
+        }
+
+        const deals = await r.json();
+        if (!deals || deals.length === 0) {
+          document.getElementById('no-deals').hidden = false;
+          return;
+        }
+
+        const tbody = document.getElementById('deals-body');
+        tbody.innerHTML = deals.map((d, i) => {
+          const ratingClass = (d.rating || '').toLowerCase();
+          const route = d.return_route
+            ? `<span class="lb-route">${d.route}</span><br><span style="color:var(--text-dim);font-size:11px">&larr; ${d.return_route}</span>`
+            : `<span class="lb-route">${d.route}</span>`;
+          const foundBy = (d.found_by || '').split('@')[0];
+
+          const flightDate = d.outbound_date || '';
+          let daysAhead = '';
+          if (d.found_at && d.outbound_date) {
+            const found = new Date(d.found_at);
+            const flight = new Date(d.outbound_date);
+            const diff = Math.round((flight - found) / (1000 * 60 * 60 * 24));
+            daysAhead = diff >= 0 ? `${diff}d ahead` : `${Math.abs(diff)}d ago`;
+          }
+          const foundDate = d.found_at ? d.found_at.split('T')[0] : '';
+
+          return `<tr>
+            <td>${i + 1}</td>
+            <td>${route}</td>
+            <td class="lb-price">\u20AC${Math.round(d.price)}</td>
+            <td class="lb-xp">${d.xp_total}</td>
+            <td class="lb-per-xp">\u20AC${d.per_xp}</td>
+            <td><span class="card-rating rating-${ratingClass}" style="font-size:10px">${d.rating}</span></td>
+            <td class="lb-date">${flightDate}<span class="lb-days">${daysAhead}</span></td>
+            <td class="lb-date">${foundDate}</td>
+            <td class="lb-found-by">${foundBy}</td>
+          </tr>`;
+        }).join('');
+
+        document.getElementById('deals-table').hidden = false;
+      } catch (e) {
+        document.getElementById('loading').hidden = true;
+        document.getElementById('no-auth').hidden = false;
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

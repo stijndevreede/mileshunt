@@ -526,6 +526,21 @@ body {
 .lb-date { font-size: 11px; white-space: nowrap; }
 .lb-days { display: block; font-size: 10px; color: var(--text-dim); }
 
+/* ── Best Deals Page ─────────────────────── */
+
+.best-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.best-header { margin-bottom: 20px; }
+.best-title { font-size: 18px; color: var(--amber); margin-bottom: 4px; }
+.best-desc { font-size: 12px; color: var(--text-dim); }
+.best-loading {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono); font-size: 13px; color: var(--text-dim);
+  padding: 40px 0;
+}
+.best-empty { padding: 40px 0; font-size: 13px; color: var(--text-dim); }
+.best-empty a { color: var(--amber); }
+.best-table { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); }
+
 /* ── Login Modal ─────────────────────────── */
 
 .modal-overlay {
