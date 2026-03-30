@@ -242,6 +242,22 @@ async function runHunt() {
     return;
   }
 
+  // Verify token is still valid BEFORE starting the search
+  try {
+    const check = await fetch(`/api/me?token=${userToken}`);
+    if (!check.ok) {
+      localStorage.removeItem('xphunt_token');
+      userToken = null;
+      currentUser = null;
+      updateAuthUI();
+      showLoginModal();
+      return;
+    }
+  } catch (e) {
+    showLoginModal();
+    return;
+  }
+
   const btn = $('#btn-hunt');
   btn.disabled = true;
   btn.textContent = 'Searching...';
@@ -264,6 +280,7 @@ async function runHunt() {
       userToken = null;
       currentUser = null;
       updateAuthUI();
+      hideStatus();
       showLoginModal();
       return;
     }
