@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MilesHunt — Flying Blue XP Optimizer</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <h1 class="logo">MilesHunt</h1>
+      <span class="subtitle">Flying Blue XP Optimizer</span>
+    </div>
+    <div class="header-right">
+      <button id="xp-ref-toggle" class="btn btn-ghost" title="XP Reference">XP Table</button>
+    </div>
+  </header>
+
+  <!-- XP Reference Panel -->
+  <div id="xp-ref" class="panel xp-panel" hidden>
+    <div class="panel-header">
+      <span class="panel-title">XP per Segment — Business Class</span>
+      <button class="btn-close" onclick="document.getElementById('xp-ref').hidden=true">&times;</button>
+    </div>
+    <table class="xp-table">
+      <thead>
+        <tr><th>Band</th><th>Eco</th><th>Prem</th><th class="hl">Biz</th><th>First</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Domestic FR</td><td>2</td><td>4</td><td class="hl">6</td><td>6</td></tr>
+        <tr><td>&lt;2 000 mi</td><td>5</td><td>10</td><td class="hl">15</td><td>15</td></tr>
+        <tr><td>2 000–3 500 mi</td><td>8</td><td>16</td><td class="hl">24</td><td>24</td></tr>
+        <tr><td>3 500–5 000 mi</td><td>10</td><td>20</td><td class="hl">30</td><td>30</td></tr>
+        <tr><td>5 000+ mi</td><td>12</td><td>24</td><td class="hl">36</td><td>36</td></tr>
+      </tbody>
+    </table>
+    <p class="xp-note">XP is earned per segment. More stopovers = more segments = more XP.</p>
+  </div>
+
+  <!-- Search Controls -->
+  <section class="controls">
+    <div class="controls-row">
+      <div class="field">
+        <label for="origin">Origin</label>
+        <input id="origin" type="text" value="AMS" maxlength="3" class="input-iata">
+      </div>
+      <div class="field">
+        <label for="date">Date</label>
+        <input id="date" type="date" class="input-date">
+      </div>
+      <div class="field">
+        <label for="cabin">Cabin</label>
+        <select id="cabin" class="input-select">
+          <option value="economy">Economy</option>
+          <option value="premium">Premium Economy</option>
+          <option value="business" selected>Business</option>
+          <option value="first">First</option>
+        </select>
+      </div>
+      <button id="btn-hunt" class="btn btn-primary">Hunt XP</button>
+    </div>
+
+    <div class="groups">
+      <span class="groups-label">Destinations:</span>
+      <div id="group-chips" class="group-chips"></div>
+    </div>
+  </section>
+
+  <!-- Status -->
+  <div id="status" class="status" hidden></div>
+
+  <!-- Stats Bar -->
+  <div id="stats" class="stats-bar" hidden>
+    <div class="stat"><span class="stat-value" id="stat-routes">0</span><span class="stat-label">Routes</span></div>
+    <div class="stat"><span class="stat-value" id="stat-best">—</span><span class="stat-label">Best $/XP</span></div>
+    <div class="stat"><span class="stat-value" id="stat-multi">0</span><span class="stat-label">Multi-stop</span></div>
+    <div class="stat"><span class="stat-value" id="stat-excellent">0</span><span class="stat-label">Excellent</span></div>
+  </div>
+
+  <!-- Results -->
+  <section id="results" class="results"></section>
+
+  <footer class="footer">
+    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; No API key required &middot; Prices in USD from Google Flights</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

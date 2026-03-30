@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mileshunt"
+version = "1.0.0"
+description = "Flying Blue XP optimizer — find the best SkyTeam deals ranked by price per XP"
+requires-python = ">=3.11"
+dependencies = [
+    "flights>=0.8.0",
+    "typer>=0.15.0",
+    "rich>=13.0.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+]
+
+[project.scripts]
+mileshunt = "mileshunt.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mileshunt"]
