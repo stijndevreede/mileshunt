@@ -419,14 +419,20 @@ function fmtDuration(mins) {
   return `${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, '0')}m`;
 }
 
-function renderBreakdown(segments, label) {
+function renderBreakdown(segments, legs, label) {
   if (!segments || segments.length === 0) return '';
   let html = `<div class="breakdown-label">${label}</div>`;
-  html += segments.map(seg => {
+  html += segments.map((seg, i) => {
     const fbNote = seg.earns_fb ? '' : '<span class="seg-no-fb">no FB</span>';
+    const leg = legs && legs[i];
+    const aircraft = leg?.aircraft;
+    const acIcon = aircraft
+      ? `<span class="seg-aircraft" title="${aircraft}">&#9992;</span>`
+      : '';
     return `<div class="seg">
       <span class="seg-route">${seg.from} &gt; ${seg.to}</span>
       <span class="seg-airline">${seg.airline}</span>
+      ${acIcon}
       <span class="seg-xp">${seg.xp} XP</span>
       <span class="seg-band">${seg.band}</span>
       ${fbNote}
@@ -466,9 +472,9 @@ function createCard(deal, rank) {
   const isRT = deal.trip_type === 'return';
   const tripBadge = isRT ? '<span class="card-trip-badge">RT</span>' : '<span class="card-trip-badge">OW</span>';
 
-  let breakdownHTML = renderBreakdown(deal.xp_breakdown, 'Outbound');
+  let breakdownHTML = renderBreakdown(deal.xp_breakdown, deal.legs, 'Outbound');
   if (isRT && deal.return_xp_breakdown && deal.return_xp_breakdown.length > 0) {
-    breakdownHTML += renderBreakdown(deal.return_xp_breakdown, 'Return');
+    breakdownHTML += renderBreakdown(deal.return_xp_breakdown, deal.return_legs, 'Return');
   }
 
   const returnRouteHTML = isRT && deal.return_route

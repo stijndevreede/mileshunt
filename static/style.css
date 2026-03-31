@@ -441,6 +441,13 @@ body {
 .seg-xp { color: var(--amber); font-weight: 600; min-width: 35px; text-align: right; }
 .seg-band { color: var(--text-dim); font-size: 10px; }
 .seg-no-fb { color: var(--red); font-size: 10px; }
+.seg-aircraft {
+  cursor: help;
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: color 0.15s;
+}
+.seg-aircraft:hover { color: var(--amber); }
 
 .card-footer {
   display: flex;
