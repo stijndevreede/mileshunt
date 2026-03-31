@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XP Hunt — Flying Blue XP Optimizer</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/style.css?v=12">
+  <link rel="stylesheet" href="/static/style.css?v=13">
 </head>
 <body>
 
@@ -128,12 +128,40 @@
       <button id="btn-hunt" class="btn btn-primary">Hunt XP</button>
     </div>
 
-    <div class="groups">
-      <span class="groups-label">Destinations:</span>
-      <div id="group-chips" class="group-chips"></div>
+    <div class="dest-row">
+      <button id="btn-destinations" class="btn btn-dest">Destinations <span id="dest-count" class="dest-count">0</span></button>
+      <div id="dest-selected-tags" class="dest-selected-tags"></div>
+      <div id="custom-iata-wrap" class="custom-iata-wrap">
+        <input id="custom-iata" type="text" class="input-iata input-iata-multi" placeholder="Add IATA codes (e.g. TOS, LLA)" maxlength="60">
+      </div>
     </div>
-    <div id="group-detail" class="group-detail" hidden></div>
   </section>
+
+  <!-- Destination Picker Modal -->
+  <div id="dest-modal" class="modal-overlay" hidden>
+    <div class="modal dest-modal-box">
+      <div class="modal-header">
+        <span class="panel-title">Select Destinations</span>
+        <button class="btn-close" id="dest-modal-close">&times;</button>
+      </div>
+      <div class="dest-tabs">
+        <button class="dest-tab active" data-tab="continents">Continents</button>
+        <button class="dest-tab" data-tab="sets">Route Sets</button>
+        <button class="dest-tab" data-tab="favorites">XP Favorites</button>
+      </div>
+      <div class="dest-search-row">
+        <input id="dest-search" type="text" class="input-iata" style="width:100%" placeholder="Search destinations, countries, airlines...">
+      </div>
+      <div id="dest-items" class="dest-items"></div>
+      <div class="dest-modal-footer">
+        <span id="dest-modal-count" class="dest-modal-count">0 destinations selected</span>
+        <div class="dest-modal-actions">
+          <button id="dest-clear" class="btn btn-ghost btn-sm">Clear all</button>
+          <button id="dest-done" class="btn btn-primary btn-sm">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Status -->
   <div id="status" class="status" hidden></div>
@@ -175,6 +203,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=12"></script>
+  <script src="/static/app.js?v=13"></script>
 </body>
 </html>

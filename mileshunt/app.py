@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from mileshunt.airports import CITY_NAMES
+from mileshunt.destinations import get_all_categories, resolve_destinations
 from mileshunt.db import (
     create_session, create_user, delete_session, delete_user,
     get_best_deals, get_search_stats, get_session_user, init_db,
@@ -49,6 +50,7 @@ class HuntRequest(BaseModel):
     date: str
     return_date: str | None = None
     groups: list[str] | None = None
+    custom_codes: list[str] | None = None  # direct IATA codes
     cabin: str = "business"
 
 
@@ -102,6 +104,12 @@ def api_groups():
         }
         for g in DEST_GROUPS
     ]
+
+
+@app.get("/api/destinations")
+def api_destinations():
+    """Return all destination categories for the picker."""
+    return get_all_categories()
 
 
 @app.get("/api/xp-table")
@@ -164,21 +172,21 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
     """SSE streaming hunt — sends progress events as each destination is searched."""
     user = _get_user(token)
 
-    # Resolve destination list
-    if req.groups:
-        by_id = {g.id: g for g in DEST_GROUPS}
-        groups = [by_id[gid] for gid in req.groups if gid in by_id]
-    else:
-        groups = [g for g in DEST_GROUPS if g.default_on]
-
-    destinations: list[str] = []
-    seen: set[str] = set()
     origin = req.origin.upper()
-    for g in groups:
-        for d in g.destinations:
-            if d not in seen and d != origin:
-                destinations.append(d)
-                seen.add(d)
+
+    # Resolve destinations from groups + custom codes (new system)
+    all_dests = resolve_destinations(req.groups, req.custom_codes)
+
+    # Fallback: if nothing selected, use old default groups
+    if not all_dests:
+        from mileshunt.skyteam import DEST_GROUPS
+        for g in DEST_GROUPS:
+            if g.default_on:
+                for d in g.destinations:
+                    if d not in all_dests:
+                        all_dests.append(d)
+
+    destinations = [d for d in all_dests if d != origin]
 
     def generate():
         t0 = time.time()
