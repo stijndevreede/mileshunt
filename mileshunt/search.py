@@ -176,8 +176,6 @@ def search_route(
     if not results:
         return []
 
-    results = all_results
-
     deals: list[FlightDeal] = []
 
     if is_rt:

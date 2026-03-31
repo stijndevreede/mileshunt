@@ -195,7 +195,7 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
 
             # Pace requests to avoid Google 429 rate limits
             if i > 0:
-                time.sleep(1)
+                time.sleep(2)
 
             new_deals: list[dict] = []
             try:
