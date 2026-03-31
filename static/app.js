@@ -74,8 +74,26 @@ async function init() {
 
   onTripTypeChange();
 
-  // If we have a stored user, use it immediately (no round-trip needed)
-  // Token validity is checked lazily when the user actually searches
+  // Restore login state from localStorage
+  console.log('[auth] init: token=', !!userToken, 'user=', currentUser?.name || 'null');
+
+  // If we have token but no user object (old login before persistence was added), verify
+  if (userToken && !currentUser?.name) {
+    try {
+      const r = await fetch(`/api/me?token=${userToken}`);
+      if (r.ok) {
+        currentUser = await r.json();
+        localStorage.setItem('xphunt_user', JSON.stringify(currentUser));
+        console.log('[auth] verified token, user=', currentUser.name);
+      } else {
+        console.log('[auth] token invalid, clearing');
+        clearAuth();
+      }
+    } catch (e) {
+      console.log('[auth] verify failed (network), keeping token');
+    }
+  }
+
   updateAuthUI();
   updateDestUI();
 }
