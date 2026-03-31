@@ -5,211 +5,157 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XP Hunt — Flying Blue XP Optimizer</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/style.css?v=20260331a">
+  <link rel="stylesheet" href="/static/style.css?v=20260331b">
 </head>
 <body>
 
-  <header class="header">
-    <div class="header-left">
-      <img src="/static/logo.svg" alt="XP Hunt" class="logo-img">
+  <!-- ═══ LOGIN PAGE ═══ -->
+  <div id="page-login" class="login-page">
+    <div class="login-box">
+      <img src="/static/logo.svg" alt="XP Hunt" class="login-logo">
+      <p class="login-tagline">Find the best Flying Blue XP deals on SkyTeam flights</p>
+      <div class="field" style="margin-bottom:12px">
+        <label for="login-email">Email</label>
+        <input id="login-email" type="email" class="input-iata" style="width:100%" placeholder="you@example.com">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" class="input-iata" style="width:100%">
+      </div>
+      <button id="login-submit" class="btn btn-primary" style="width:100%;justify-content:center">Login</button>
+      <div id="login-error" class="login-error" hidden></div>
     </div>
-    <div class="header-right">
-      <span id="user-info" hidden>
+  </div>
+
+  <!-- ═══ APP (hidden until logged in) ═══ -->
+  <div id="page-app" hidden>
+
+    <header class="header">
+      <div class="header-left">
+        <img src="/static/logo.svg" alt="XP Hunt" class="logo-img">
+      </div>
+      <div class="header-right">
         <span id="user-name" class="user-name"></span>
         <button id="logout-btn" class="btn btn-ghost btn-sm">Logout</button>
-      </span>
-      <a href="/best" class="btn btn-ghost" id="best-deals-link" hidden>Best Deals</a>
-      <button id="tips-toggle" class="btn btn-ghost">XP Tips</button>
-      <button id="xp-ref-toggle" class="btn btn-ghost">XP Table</button>
-    </div>
-  </header>
+        <a href="/best" class="btn btn-ghost">Best Deals</a>
+        <button id="tips-toggle" class="btn btn-ghost">XP Tips</button>
+        <button id="xp-ref-toggle" class="btn btn-ghost">XP Table</button>
+      </div>
+    </header>
 
-  <!-- XP Reference Panel -->
-  <div id="xp-ref" class="panel xp-panel" hidden>
-    <div class="panel-header">
-      <span class="panel-title">Flying Blue XP per Segment</span>
-      <button class="btn-close" onclick="document.getElementById('xp-ref').hidden=true">&times;</button>
-    </div>
-    <table class="xp-table">
-      <thead>
-        <tr><th>Band</th><th>Eco</th><th>Prem</th><th class="hl">Biz</th><th>First</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Domestic FR</td><td>2</td><td>4</td><td class="hl">6</td><td>10</td></tr>
-        <tr><td>&lt;2 000 mi</td><td>5</td><td>10</td><td class="hl">15</td><td>25</td></tr>
-        <tr><td>2 000–3 500 mi</td><td>8</td><td>16</td><td class="hl">24</td><td>40</td></tr>
-        <tr><td>3 500–5 000 mi</td><td>10</td><td>20</td><td class="hl">30</td><td>50</td></tr>
-        <tr><td>5 000+ mi</td><td>12</td><td>24</td><td class="hl">36</td><td>60</td></tr>
-      </tbody>
-    </table>
-    <p class="xp-note">
-      XP is earned <strong>per segment</strong>. More stopovers = more segments = more XP.<br>
-      Multiplier: Eco 1x, Premium 2x, Business 3x, First/La Premiere 5x.<br>
-      Basic fares earn reduced 2 XP/segment. Light/Standard/Flex earn full XP.
-    </p>
-  </div>
-
-  <!-- XP Tips Panel -->
-  <div id="tips-panel" class="panel tips-panel" hidden>
-    <div class="panel-header">
-      <span class="panel-title">Maximize Your XP</span>
-      <button class="btn-close" onclick="document.getElementById('tips-panel').hidden=true">&times;</button>
-    </div>
-    <div class="tips-content">
-      <div class="tip-section">
-        <h4>Multi-Segment Strategy</h4>
-        <p>XP is per segment, not per trip. AMS-CDG-NCE in Business = 2 segments = 30 XP vs. AMS-NCE direct = 15 XP. Always prefer connections over direct flights.</p>
+    <!-- XP Reference Panel -->
+    <div id="xp-ref" class="panel xp-panel" hidden>
+      <div class="panel-header">
+        <span class="panel-title">Flying Blue XP per Segment</span>
+        <button class="btn-close" onclick="document.getElementById('xp-ref').hidden=true">&times;</button>
       </div>
-      <div class="tip-section">
-        <h4>Antwerp Hack (ZWE)</h4>
-        <p>KLM Air&Rail from Antwerp (ZWE) to AMS counts as a flight segment earning 15 XP in Business. ZWE-AMS-CDG-TUN = 3 segments/direction = 90 XP RT. Often cheaper than originating from AMS.</p>
-      </div>
-      <div class="tip-section">
-        <h4>SAF Contributions</h4>
-        <p>Sustainable Aviation Fuel contributions on KLM.com/AirFrance.com earn ~1 XP per &euro;10. This is the only non-flight method that also earns UXP (Ultimate XP for top-tier status).</p>
-      </div>
-      <div class="tip-section">
-        <h4>Credit Card XP</h4>
-        <p><strong>NL/FR Amex Silver:</strong> 15 XP/year (&euro;84). <strong>Gold:</strong> 30 XP/year (&euro;198).<br>
-        <strong>US BoA Visa:</strong> Up to 160 XP/year ($89) &mdash; the most powerful XP card.</p>
-      </div>
-      <div class="tip-section">
-        <h4>La Premiere Feeder Trick</h4>
-        <p>When booking First Class (La Premiere) with connections, all connecting segments count as First Class for XP &mdash; even if you fly Business on the feeder leg. Turns 15 XP into 25 XP per European segment.</p>
-      </div>
-      <div class="tip-section">
-        <h4>Earning Rules</h4>
-        <ul>
-          <li>AF/KL flights earn XP + UXP. Partner flights earn XP only, no UXP.</li>
-          <li>Status level does NOT affect XP earned &mdash; no status bonuses.</li>
-          <li>Award tickets earn 0 XP. Miles+Cash earns full XP.</li>
-          <li>Avoid Basic fares (2 XP only). Light/Standard/Flex all earn the same.</li>
-        </ul>
-      </div>
-      <div class="tip-section">
-        <h4>Status Thresholds</h4>
-        <p>Silver: 100 XP &bull; Gold: 180 XP &bull; Platinum: 300 XP &bull; Ultimate: 900 UXP<br>
-        Max 300 XP rolls over to next year.</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Search Controls -->
-  <section class="controls">
-    <div class="controls-row">
-      <div class="field">
-        <label for="origin">From</label>
-        <input id="origin" type="text" value="AMS" maxlength="3" class="input-iata" placeholder="AMS">
-      </div>
-      <div class="field">
-        <label for="trip-type">Trip</label>
-        <select id="trip-type" class="input-select input-select-sm">
-          <option value="oneway">One-way</option>
-          <option value="return" selected>Return</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="date">Outbound</label>
-        <input id="date" type="date" class="input-date">
-      </div>
-      <div class="field" id="return-field">
-        <label for="return-date">Return</label>
-        <input id="return-date" type="date" class="input-date">
-      </div>
-      <div class="field">
-        <label for="cabin">Cabin</label>
-        <select id="cabin" class="input-select">
-          <option value="economy">Economy</option>
-          <option value="premium">Premium Eco</option>
-          <option value="business" selected>Business</option>
-          <option value="first">First</option>
-        </select>
-      </div>
-      <button id="btn-hunt" class="btn btn-primary">Hunt XP</button>
+      <table class="xp-table">
+        <thead>
+          <tr><th>Band</th><th>Eco</th><th>Prem</th><th class="hl">Biz</th><th>First</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Domestic</td><td>2</td><td>4</td><td class="hl">6</td><td>10</td></tr>
+          <tr><td>&lt;2 000 mi</td><td>5</td><td>10</td><td class="hl">15</td><td>25</td></tr>
+          <tr><td>2 000–3 500 mi</td><td>8</td><td>16</td><td class="hl">24</td><td>40</td></tr>
+          <tr><td>3 500–5 000 mi</td><td>10</td><td>20</td><td class="hl">30</td><td>50</td></tr>
+          <tr><td>5 000+ mi</td><td>12</td><td>24</td><td class="hl">36</td><td>60</td></tr>
+        </tbody>
+      </table>
+      <p class="xp-note">
+        XP is earned <strong>per segment</strong>. More stopovers = more segments = more XP.<br>
+        Multiplier: Eco 1x, Premium 2x, Business 3x, First/La Premiere 5x.<br>
+        Basic fares earn reduced 2 XP/segment. Light/Standard/Flex earn full XP.
+      </p>
     </div>
 
-    <div class="dest-row">
-      <button id="btn-destinations" class="btn btn-dest">Destinations <span id="dest-count" class="dest-count">0</span></button>
-      <div id="dest-selected-tags" class="dest-selected-tags"></div>
+    <!-- XP Tips Panel -->
+    <div id="tips-panel" class="panel tips-panel" hidden>
+      <div class="panel-header">
+        <span class="panel-title">Maximize Your XP</span>
+        <button class="btn-close" onclick="document.getElementById('tips-panel').hidden=true">&times;</button>
+      </div>
+      <div class="tips-content">
+        <div class="tip-section"><h4>Multi-Segment Strategy</h4><p>XP is per segment, not per trip. AMS-CDG-NCE in Business = 2 segments = 30 XP vs. AMS-NCE direct = 15 XP. Always prefer connections over direct flights.</p></div>
+        <div class="tip-section"><h4>Antwerp Hack (ZWE)</h4><p>KLM Air&Rail from Antwerp (ZWE) to AMS counts as a flight segment earning 15 XP in Business. ZWE-AMS-CDG-TUN = 3 segments/direction = 90 XP RT. Often cheaper than originating from AMS.</p></div>
+        <div class="tip-section"><h4>SAF Contributions</h4><p>Sustainable Aviation Fuel contributions on KLM.com/AirFrance.com earn ~1 XP per &euro;10. This is the only non-flight method that also earns UXP.</p></div>
+        <div class="tip-section"><h4>Credit Card XP</h4><p><strong>NL/FR Amex Silver:</strong> 15 XP/year (&euro;84). <strong>Gold:</strong> 30 XP/year (&euro;198).<br><strong>US BoA Visa:</strong> Up to 160 XP/year ($89).</p></div>
+        <div class="tip-section"><h4>La Premiere Feeder Trick</h4><p>When booking First Class with connections, all connecting segments count as First Class for XP &mdash; even if you fly Business on the feeder leg.</p></div>
+        <div class="tip-section"><h4>Earning Rules</h4><ul><li>AF/KL flights earn XP + UXP. Partner flights earn XP only.</li><li>Status level does NOT affect XP earned.</li><li>Award tickets earn 0 XP. Miles+Cash earns full XP.</li><li>Avoid Basic fares (2 XP only).</li></ul></div>
+        <div class="tip-section"><h4>Status Thresholds</h4><p>Silver: 100 XP &bull; Gold: 180 XP &bull; Platinum: 300 XP &bull; Ultimate: 900 UXP<br>Max 300 XP rolls over.</p></div>
+      </div>
     </div>
-  </section>
 
-  <!-- Destination Picker Modal -->
-  <div id="dest-modal" class="modal-overlay" hidden>
-    <div class="modal dest-modal-box">
-      <div class="modal-header">
-        <span class="panel-title">Select Destinations</span>
-        <button class="btn-close" id="dest-modal-close">&times;</button>
+    <!-- Search Controls -->
+    <section class="controls">
+      <div class="controls-row">
+        <div class="field"><label for="origin">From</label><input id="origin" type="text" value="AMS" maxlength="3" class="input-iata" placeholder="AMS"></div>
+        <div class="field"><label for="trip-type">Trip</label><select id="trip-type" class="input-select input-select-sm"><option value="oneway">One-way</option><option value="return" selected>Return</option></select></div>
+        <div class="field"><label for="date">Outbound</label><input id="date" type="date" class="input-date"></div>
+        <div class="field" id="return-field"><label for="return-date">Return</label><input id="return-date" type="date" class="input-date"></div>
+        <div class="field"><label for="cabin">Cabin</label><select id="cabin" class="input-select"><option value="economy">Economy</option><option value="premium">Premium Eco</option><option value="business" selected>Business</option><option value="first">First</option></select></div>
+        <button id="btn-hunt" class="btn btn-primary">Hunt XP</button>
       </div>
-      <div class="dest-tabs">
-        <button class="dest-tab active" data-tab="continents">Continents</button>
-        <button class="dest-tab" data-tab="sets">Route Sets</button>
-        <button class="dest-tab" data-tab="favorites">XP Favorites</button>
-        <button class="dest-tab" data-tab="custom">IATA Codes</button>
+      <div class="dest-row">
+        <button id="btn-destinations" class="btn btn-dest">Destinations <span id="dest-count" class="dest-count">0</span></button>
+        <div id="dest-selected-tags" class="dest-selected-tags"></div>
       </div>
-      <div class="dest-search-row" id="dest-search-row">
-        <input id="dest-search" type="text" class="input-iata" style="width:100%" placeholder="Search destinations, countries, airlines...">
-      </div>
-      <div id="dest-items" class="dest-items"></div>
-      <!-- Custom IATA tab content (hidden by default) -->
-      <div id="dest-custom" class="dest-custom" hidden>
-        <div class="dest-custom-input-row">
-          <input id="custom-iata-input" type="text" class="input-iata input-iata-big" placeholder="TOS" maxlength="3">
-          <button id="custom-iata-add" class="btn btn-primary">Add</button>
+    </section>
+
+    <!-- Destination Picker Modal -->
+    <div id="dest-modal" class="modal-overlay" hidden>
+      <div class="modal dest-modal-box">
+        <div class="modal-header">
+          <span class="panel-title">Select Destinations</span>
+          <button class="btn-close" id="dest-modal-close">&times;</button>
         </div>
-        <p class="dest-custom-hint">Type a 3-letter airport code and press Enter or Add.</p>
-        <div id="custom-iata-tags" class="dest-custom-tags"></div>
-      </div>
-      <div class="dest-modal-footer">
-        <span id="dest-modal-count" class="dest-modal-count">0 destinations selected</span>
-        <div class="dest-modal-actions">
-          <button id="dest-clear" class="btn btn-ghost btn-sm">Clear all</button>
-          <button id="dest-done" class="btn btn-primary btn-sm">Done</button>
+        <div class="dest-tabs">
+          <button class="dest-tab active" data-tab="continents">Continents</button>
+          <button class="dest-tab" data-tab="sets">Route Sets</button>
+          <button class="dest-tab" data-tab="favorites">XP Favorites</button>
+          <button class="dest-tab" data-tab="custom">IATA Codes</button>
+        </div>
+        <div class="dest-search-row" id="dest-search-row">
+          <input id="dest-search" type="text" class="input-iata" style="width:100%" placeholder="Search destinations, countries, airlines...">
+        </div>
+        <div id="dest-items" class="dest-items"></div>
+        <div id="dest-custom" class="dest-custom" hidden>
+          <div class="dest-custom-input-row">
+            <input id="custom-iata-input" type="text" class="input-iata input-iata-big" placeholder="TOS" maxlength="3">
+            <button id="custom-iata-add" class="btn btn-primary">Add</button>
+          </div>
+          <p class="dest-custom-hint">Type a 3-letter airport code and press Enter or Add.</p>
+          <div id="custom-iata-tags" class="dest-custom-tags"></div>
+        </div>
+        <div class="dest-modal-footer">
+          <span id="dest-modal-count" class="dest-modal-count">0 destinations selected</span>
+          <div class="dest-modal-actions">
+            <button id="dest-clear" class="btn btn-ghost btn-sm">Clear all</button>
+            <button id="dest-done" class="btn btn-primary btn-sm">Done</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Status -->
-  <div id="status" class="status" hidden></div>
+    <!-- Status -->
+    <div id="status" class="status" hidden></div>
 
-  <!-- Stats Bar -->
-  <div id="stats" class="stats-bar" hidden>
-    <div class="stat"><span class="stat-value" id="stat-routes">0</span><span class="stat-label">Routes</span></div>
-    <div class="stat"><span class="stat-value" id="stat-best">—</span><span class="stat-label">Best &euro;/XP</span></div>
-    <div class="stat"><span class="stat-value" id="stat-multi">0</span><span class="stat-label">Multi-stop</span></div>
-    <div class="stat"><span class="stat-value" id="stat-excellent">0</span><span class="stat-label">Excellent</span></div>
-  </div>
-
-  <!-- Results -->
-  <section id="results" class="results"></section>
-
-  <footer class="footer">
-    <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; Prices in EUR</p>
-  </footer>
-
-  <!-- Login Modal -->
-  <div id="login-modal" class="modal-overlay" hidden>
-    <div class="modal">
-      <div class="modal-header">
-        <span class="panel-title">Login to search</span>
-        <button id="login-close" class="btn-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="field" style="margin-bottom:12px">
-          <label for="login-email">Email</label>
-          <input id="login-email" type="email" class="input-iata" style="width:100%" placeholder="you@example.com">
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label for="login-password">Password</label>
-          <input id="login-password" type="password" class="input-iata" style="width:100%">
-        </div>
-        <button id="login-submit" class="btn btn-primary" style="width:100%;justify-content:center">Login</button>
-        <div id="login-error" class="login-error" hidden></div>
-      </div>
+    <!-- Stats Bar -->
+    <div id="stats" class="stats-bar" hidden>
+      <div class="stat"><span class="stat-value" id="stat-routes">0</span><span class="stat-label">Routes</span></div>
+      <div class="stat"><span class="stat-value" id="stat-best">—</span><span class="stat-label">Best &euro;/XP</span></div>
+      <div class="stat"><span class="stat-value" id="stat-multi">0</span><span class="stat-label">Multi-stop</span></div>
+      <div class="stat"><span class="stat-value" id="stat-excellent">0</span><span class="stat-label">Excellent</span></div>
     </div>
-  </div>
 
-  <script src="/static/app.js?v=20260331a"></script>
+    <!-- Results -->
+    <section id="results" class="results"></section>
+
+    <footer class="footer">
+      <p>Powered by <a href="https://github.com/punitarani/fli" target="_blank">fli</a> (Google Flights) &middot; Prices in EUR</p>
+    </footer>
+
+  </div><!-- /page-app -->
+
+  <script src="/static/app.js?v=20260331b"></script>
 </body>
 </html>

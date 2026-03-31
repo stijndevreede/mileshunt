@@ -771,7 +771,41 @@ body {
 .best-empty a { color: var(--amber); }
 .best-table { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); }
 
-/* ── Login Modal ─────────────────────────── */
+/* ── Login Page ──────────────────────────── */
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.login-box {
+  width: 360px;
+  max-width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+.login-logo { display: block; height: 44px; margin: 0 auto 16px; }
+.login-tagline {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.login-error {
+  color: var(--red);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  margin-top: 10px;
+  text-align: center;
+}
+
+/* ── Modals (destination picker etc.) ───── */
 
 .modal-overlay {
   position: fixed;
