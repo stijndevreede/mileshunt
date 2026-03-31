@@ -723,9 +723,16 @@ body {
 
 /* Custom IATA tab */
 .dest-custom { padding: 16px; flex: 1; overflow-y: auto; }
-.dest-custom-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
-.dest-custom-input-row input { flex: 1; font-size: 16px; letter-spacing: 2px; }
-.dest-custom-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+.dest-custom-input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.input-iata-big {
+  width: 120px !important;
+  font-size: 22px !important;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  padding: 10px 14px;
+}
+.dest-custom-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; }
 .dest-custom-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .dest-custom-tag {
   display: inline-flex;
