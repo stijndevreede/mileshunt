@@ -721,6 +721,34 @@ body {
 .dest-modal-count { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
 .dest-modal-actions { display: flex; gap: 8px; }
 
+/* Custom IATA tab */
+.dest-custom { padding: 16px; flex: 1; overflow-y: auto; }
+.dest-custom-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.dest-custom-input-row input { flex: 1; font-size: 16px; letter-spacing: 2px; }
+.dest-custom-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+.dest-custom-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.dest-custom-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: rgba(240, 180, 41, 0.12);
+  border: 1px solid var(--amber-dim);
+  border-radius: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--amber);
+}
+.dest-custom-tag .tag-name { font-weight: 400; font-size: 11px; color: var(--text-dim); }
+.dest-custom-tag .tag-x {
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 14px;
+  margin-left: 2px;
+}
+.dest-custom-tag .tag-x:hover { opacity: 1; }
+
 /* ── Best Deals Page ─────────────────────── */
 
 .best-page { padding: 24px; max-width: 1100px; margin: 0 auto; }

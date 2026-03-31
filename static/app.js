@@ -1,12 +1,13 @@
-// XP Hunt — Frontend logic v13 (2026-03-31)
+// XP Hunt — Frontend logic v14 (2026-03-31)
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
 let categories = [];        // [{id, label, icon, items}]
 let selectedGroups = new Set();
+let customCodes = new Set(); // individual IATA codes
 let userToken = localStorage.getItem('xphunt_token');
-let currentUser = null;
+let currentUser = JSON.parse(localStorage.getItem('xphunt_user') || 'null');
 let searchAbort = null;
 let allDeals = [];
 let activeTab = 'continents';
@@ -51,26 +52,30 @@ async function init() {
   $('#btn-destinations').addEventListener('click', openDestPicker);
   $('#dest-modal-close').addEventListener('click', closeDestPicker);
   $('#dest-done').addEventListener('click', closeDestPicker);
-  $('#dest-clear').addEventListener('click', () => { selectedGroups.clear(); renderDestPicker(); updateDestUI(); });
+  $('#dest-clear').addEventListener('click', () => {
+    selectedGroups.clear();
+    customCodes.clear();
+    renderDestPicker();
+    renderCustomIataTags();
+    updateDestUI();
+  });
   $('#dest-search').addEventListener('input', renderDestPicker);
   $$('.dest-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       activeTab = tab.dataset.tab;
       $$('.dest-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === activeTab));
-      renderDestPicker();
+      switchDestTab();
     });
   });
 
+  // Custom IATA
+  $('#custom-iata-add').addEventListener('click', addCustomIata);
+  $('#custom-iata-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCustomIata(); });
+
   onTripTypeChange();
 
-  // Validate stored token
-  if (userToken) {
-    try {
-      const r = await fetch(`/api/me?token=${userToken}`);
-      if (r.ok) { currentUser = await r.json(); }
-      else { clearAuth(); }
-    } catch (e) { clearAuth(); }
-  }
+  // If we have a stored user, use it immediately (no round-trip needed)
+  // Token validity is checked lazily when the user actually searches
   updateAuthUI();
   updateDestUI();
 }
@@ -79,6 +84,7 @@ async function init() {
 
 function clearAuth() {
   localStorage.removeItem('xphunt_token');
+  localStorage.removeItem('xphunt_user');
   userToken = null;
   currentUser = null;
 }
@@ -156,6 +162,7 @@ async function doLogin() {
     userToken = data.token;
     currentUser = data.user;
     localStorage.setItem('xphunt_token', userToken);
+    localStorage.setItem('xphunt_user', JSON.stringify(currentUser));
     closeLoginModal();
     updateAuthUI();
   } catch (e) {
@@ -186,13 +193,72 @@ function openDestPicker() {
   $('#dest-modal').hidden = false;
   $('#dest-modal').style.display = '';
   $('#dest-search').value = '';
-  renderDestPicker();
+  switchDestTab();
 }
 
 function closeDestPicker() {
   $('#dest-modal').hidden = true;
   $('#dest-modal').style.display = 'none';
   updateDestUI();
+}
+
+function switchDestTab() {
+  const isCustom = activeTab === 'custom';
+  $('#dest-search-row').hidden = isCustom;
+  $('#dest-items').hidden = isCustom;
+  $('#dest-custom').hidden = !isCustom;
+  if (isCustom) {
+    renderCustomIataTags();
+    setTimeout(() => $('#custom-iata-input').focus(), 50);
+  } else {
+    renderDestPicker();
+  }
+  updateDestModalCount();
+}
+
+function addCustomIata() {
+  const input = $('#custom-iata-input');
+  const code = input.value.trim().toUpperCase();
+  if (code.length === 3 && /^[A-Z]{3}$/.test(code)) {
+    customCodes.add(code);
+    input.value = '';
+    renderCustomIataTags();
+    updateDestModalCount();
+  }
+  input.focus();
+}
+
+function renderCustomIataTags() {
+  const container = $('#custom-iata-tags');
+  if (!container) return;
+  if (customCodes.size === 0) {
+    container.innerHTML = '<span style="color:var(--text-dim);font-size:12px">No custom destinations added yet.</span>';
+    return;
+  }
+  container.innerHTML = [...customCodes].map(code => {
+    const name = getAllCityNames()[code] || '';
+    const nameSpan = name ? `<span class="tag-name">${name}</span>` : '';
+    return `<span class="dest-custom-tag">${code} ${nameSpan}<span class="tag-x" data-code="${code}">&times;</span></span>`;
+  }).join('');
+
+  container.querySelectorAll('.tag-x').forEach(el => {
+    el.addEventListener('click', () => {
+      customCodes.delete(el.dataset.code);
+      renderCustomIataTags();
+      updateDestModalCount();
+    });
+  });
+}
+
+function getAllCityNames() {
+  // Build a flat lookup from all category items
+  const names = {};
+  for (const cat of categories) {
+    for (const item of cat.items) {
+      if (item.destination_names) Object.assign(names, item.destination_names);
+    }
+  }
+  return names;
 }
 
 function renderDestPicker() {
@@ -251,38 +317,42 @@ function getSelectedDestCount() {
     const item = allItems.find(i => i.id === id);
     if (item) item.destinations.forEach(d => seen.add(d));
   }
-  // Add custom codes
-  getCustomCodes().forEach(c => seen.add(c));
+  customCodes.forEach(c => seen.add(c));
   return seen.size;
-}
-
-function getCustomCodes() {
-  const raw = ($('#custom-iata').value || '').toUpperCase().trim();
-  if (!raw) return [];
-  return raw.split(/[,\s]+/).filter(c => c.length === 3);
 }
 
 function updateDestUI() {
   const count = getSelectedDestCount();
   $('#dest-count').textContent = count;
 
-  // Show selected group tags
   const tagsContainer = $('#dest-selected-tags');
   const allItems = categories.flatMap(c => c.items);
-  const tags = [];
+
+  // Group tags
+  let html = '';
   for (const id of selectedGroups) {
     const item = allItems.find(i => i.id === id);
-    if (item) tags.push({ id: item.id, label: item.label });
+    if (item) html += `<span class="dest-sel-tag">${item.label} <span class="dest-sel-x" data-id="${id}">&times;</span></span>`;
   }
-  tagsContainer.innerHTML = tags.map(t =>
-    `<span class="dest-sel-tag">${t.label} <span class="dest-sel-x" data-id="${t.id}">&times;</span></span>`
-  ).join('');
+  // Custom IATA tags
+  for (const code of customCodes) {
+    html += `<span class="dest-sel-tag">${code} <span class="dest-sel-x dest-sel-custom" data-code="${code}">&times;</span></span>`;
+  }
+  tagsContainer.innerHTML = html;
 
-  // Remove tag click
-  tagsContainer.querySelectorAll('.dest-sel-x').forEach(el => {
+  // Remove group tag click
+  tagsContainer.querySelectorAll('.dest-sel-x:not(.dest-sel-custom)').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       selectedGroups.delete(el.dataset.id);
+      updateDestUI();
+    });
+  });
+  // Remove custom code tag click
+  tagsContainer.querySelectorAll('.dest-sel-custom').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      customCodes.delete(el.dataset.code);
       updateDestUI();
     });
   });
@@ -296,11 +366,10 @@ async function runHunt() {
   const cabin = $('#cabin').value;
   const isReturn = $('#trip-type').value === 'return';
   const returnDate = isReturn ? $('#return-date').value : null;
-  const customCodes = getCustomCodes();
 
   if (!date) { showStatus('Please select an outbound date.', false); return; }
   if (isReturn && !returnDate) { showStatus('Please select a return date.', false); return; }
-  if (selectedGroups.size === 0 && customCodes.length === 0) {
+  if (selectedGroups.size === 0 && customCodes.size === 0) {
     showStatus('Select destinations first (click the Destinations button).', false);
     return;
   }
@@ -320,7 +389,7 @@ async function runHunt() {
   try {
     const body = { origin, date, cabin, groups: [...selectedGroups] };
     if (returnDate) body.return_date = returnDate;
-    if (customCodes.length > 0) body.custom_codes = customCodes;
+    if (customCodes.size > 0) body.custom_codes = [...customCodes];
 
     const resp = await fetch(`/api/hunt/stream?token=${userToken}`, {
       method: 'POST',

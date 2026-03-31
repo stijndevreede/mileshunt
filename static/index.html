@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XP Hunt — Flying Blue XP Optimizer</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link rel="stylesheet" href="/static/style.css?v=13">
+  <link rel="stylesheet" href="/static/style.css?v=14">
 </head>
 <body>
 
@@ -131,9 +131,6 @@
     <div class="dest-row">
       <button id="btn-destinations" class="btn btn-dest">Destinations <span id="dest-count" class="dest-count">0</span></button>
       <div id="dest-selected-tags" class="dest-selected-tags"></div>
-      <div id="custom-iata-wrap" class="custom-iata-wrap">
-        <input id="custom-iata" type="text" class="input-iata input-iata-multi" placeholder="Add IATA codes (e.g. TOS, LLA)" maxlength="60">
-      </div>
     </div>
   </section>
 
@@ -148,11 +145,21 @@
         <button class="dest-tab active" data-tab="continents">Continents</button>
         <button class="dest-tab" data-tab="sets">Route Sets</button>
         <button class="dest-tab" data-tab="favorites">XP Favorites</button>
+        <button class="dest-tab" data-tab="custom">IATA Codes</button>
       </div>
-      <div class="dest-search-row">
+      <div class="dest-search-row" id="dest-search-row">
         <input id="dest-search" type="text" class="input-iata" style="width:100%" placeholder="Search destinations, countries, airlines...">
       </div>
       <div id="dest-items" class="dest-items"></div>
+      <!-- Custom IATA tab content (hidden by default) -->
+      <div id="dest-custom" class="dest-custom" hidden>
+        <div class="dest-custom-input-row">
+          <input id="custom-iata-input" type="text" class="input-iata" style="width:100%;text-transform:uppercase" placeholder="Type IATA code (e.g. TOS)" maxlength="3">
+          <button id="custom-iata-add" class="btn btn-primary btn-sm">Add</button>
+        </div>
+        <p class="dest-custom-hint">Add individual airports by their 3-letter IATA code. Press Enter or click Add.</p>
+        <div id="custom-iata-tags" class="dest-custom-tags"></div>
+      </div>
       <div class="dest-modal-footer">
         <span id="dest-modal-count" class="dest-modal-count">0 destinations selected</span>
         <div class="dest-modal-actions">
@@ -203,6 +210,6 @@
     </div>
   </div>
 
-  <script src="/static/app.js?v=13"></script>
+  <script src="/static/app.js?v=14"></script>
 </body>
 </html>
