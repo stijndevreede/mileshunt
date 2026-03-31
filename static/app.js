@@ -1,4 +1,4 @@
-// XP Hunt — Frontend logic v14 (2026-03-31)
+// XP Hunt — Frontend logic v15 (2026-03-31)
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
@@ -90,7 +90,7 @@ function clearAuth() {
 }
 
 function updateAuthUI() {
-  if (currentUser) {
+  if (currentUser && currentUser.name) {
     $('#user-info').hidden = false;
     $('#user-name').textContent = currentUser.name;
     if ($('#best-deals-link')) $('#best-deals-link').hidden = false;
@@ -101,7 +101,9 @@ function updateAuthUI() {
 }
 
 function requireAuth() {
-  if (userToken && currentUser) return true;
+  if (userToken && currentUser && currentUser.name) return true;
+  // Token exists but no user object — clear stale state
+  if (userToken && !currentUser) clearAuth();
   showLoginModal();
   return false;
 }
