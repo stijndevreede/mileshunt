@@ -114,6 +114,13 @@ COORDS: dict[str, tuple[float, float]] = {
     "NAP": (40.8860, 14.2908),
     "OPO": (41.2481, -8.6814),
     "LHR": (51.4700, -0.4543),
+    # Germany
+    "DUS": (51.2895, 6.7668),
+    "MUC": (48.3538, 11.7861),
+    "STR": (48.6899, 9.2220),
+    "NUE": (49.4987, 11.0669),
+    "FRA": (50.0379, 8.5622),
+    "HAM": (53.6304, 9.9882),
     "MXP": (45.6306, 8.7281),
     # Middle East
     "JED": (21.6796, 39.1565),
@@ -220,7 +227,9 @@ AIRPORT_COUNTRY: dict[str, str] = {
     "OTP": "RO", "CLJ": "RO", "TSR": "RO", "IAS": "RO", "SCV": "RO",
     # Other European
     "KRK": "PL", "WAW": "PL", "BUD": "HU", "ATH": "GR", "IST": "TR",
-    "BER": "DE", "DUB": "IE", "LIS": "PT", "OPO": "PT", "LHR": "GB",
+    "BER": "DE", "DUS": "DE", "MUC": "DE", "STR": "DE", "NUE": "DE",
+    "FRA": "DE", "HAM": "DE",
+    "DUB": "IE", "LIS": "PT", "OPO": "PT", "LHR": "GB",
     "SOF": "BG", "BEG": "RS",
     # North Africa
     "TUN": "TN", "CMN": "MA", "RAK": "MA", "ALG": "DZ", "ORN": "DZ",
@@ -277,7 +286,9 @@ CITY_NAMES: dict[str, str] = {
     "CUR": "Curacao", "AUA": "Aruba", "SXM": "St Maarten",
     "MEX": "Mexico City", "EZE": "Buenos Aires", "GRU": "Sao Paulo",
     "YUL": "Montreal", "BOG": "Bogota", "LIM": "Lima",
-    "ZWE": "Antwerp",
+    "ZWE": "Antwerp", "SVQ": "Seville",
+    "DUS": "Dusseldorf", "MUC": "Munich", "STR": "Stuttgart",
+    "NUE": "Nuremberg", "FRA": "Frankfurt", "HAM": "Hamburg",
     "PGF": "Perpignan", "EGC": "Bergerac", "PUF": "Pau", "RDZ": "Rodez",
     "AUR": "Aurillac", "LRH": "La Rochelle", "DNR": "Dinard", "BVE": "Brive",
     "VCE": "Venice", "BLQ": "Bologna", "FLR": "Florence", "CTA": "Catania",
