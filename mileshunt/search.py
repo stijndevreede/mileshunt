@@ -146,11 +146,16 @@ def search_route(
             )
         )
 
+    import time as _time
+
     client = _client()
 
     # Search twice: cheapest (good prices) + duration-sorted (surfaces multi-stop)
     all_results = []
-    for sort in [SortBy.CHEAPEST, SortBy.DURATION]:
+    for i, sort in enumerate([SortBy.CHEAPEST, SortBy.DURATION]):
+        if i > 0:
+            _time.sleep(1.5)  # rate limit pause between searches
+
         filters = FlightSearchFilters(
             trip_type=trip_type,
             passenger_info=PassengerInfo(adults=1),
@@ -159,16 +164,17 @@ def search_route(
             sort_by=sort,
         )
         try:
-            results = client.search(filters, top_n=10)
+            results = client.search(filters, top_n=8)
             if results:
                 all_results.extend(results)
         except Exception as e:
             log.warning("Search %s>%s sort=%s failed: %s", origin, dest, sort, e)
+            if "429" in str(e):
+                _time.sleep(3)  # extra backoff on rate limit
 
     if not all_results:
         return []
 
-    # Deduplicate raw results before processing
     results = all_results
 
     deals: list[FlightDeal] = []

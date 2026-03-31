@@ -190,6 +190,10 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
         for i, dest in enumerate(destinations):
             city = CITY_NAMES.get(dest, dest)
 
+            # Pace requests to avoid Google rate limits
+            if i > 0:
+                time.sleep(0.5)
+
             new_deals: list[dict] = []
             try:
                 deals = search_route(origin, dest, req.date, req.cabin, req.return_date)
