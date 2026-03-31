@@ -150,29 +150,30 @@ def search_route(
 
     client = _client()
 
-    # Search twice: cheapest (good prices) + duration-sorted (surfaces multi-stop)
-    all_results = []
-    for i, sort in enumerate([SortBy.CHEAPEST, SortBy.DURATION]):
-        if i > 0:
-            _time.sleep(1.5)  # rate limit pause between searches
+    # Single search per route — use "top flights" sort which includes
+    # both cheap and multi-stop options from Google's best_flights + other_flights
+    filters = FlightSearchFilters(
+        trip_type=trip_type,
+        passenger_info=PassengerInfo(adults=1),
+        flight_segments=segments,
+        seat_type=seat,
+        sort_by=SortBy.CHEAPEST,
+    )
 
-        filters = FlightSearchFilters(
-            trip_type=trip_type,
-            passenger_info=PassengerInfo(adults=1),
-            flight_segments=segments,
-            seat_type=seat,
-            sort_by=sort,
-        )
+    for attempt in range(3):
         try:
-            results = client.search(filters, top_n=8)
-            if results:
-                all_results.extend(results)
+            results = client.search(filters, top_n=10)
+            break
         except Exception as e:
-            log.warning("Search %s>%s sort=%s failed: %s", origin, dest, sort, e)
+            log.warning("Search %s>%s attempt %d failed: %s", origin, dest, attempt + 1, e)
             if "429" in str(e):
-                _time.sleep(3)  # extra backoff on rate limit
+                _time.sleep(4 * (attempt + 1))  # 4s, 8s, 12s backoff
+            else:
+                break
+    else:
+        results = None
 
-    if not all_results:
+    if not results:
         return []
 
     results = all_results

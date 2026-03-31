@@ -182,17 +182,20 @@ def api_hunt_stream(req: HuntRequest, request: Request, token: str):
 
     def generate():
         t0 = time.time()
-        # Track all unique deals, keyed for dedup
         unique: dict[str, FlightDeal] = {}
         total = len(destinations)
         sent_keys: set[str] = set()
 
+        # Send immediate first event so the browser knows the stream is alive
+        first_city = CITY_NAMES.get(destinations[0], destinations[0]) if destinations else "..."
+        yield f"data: {json.dumps({'type': 'progress', 'current': 0, 'total': total, 'route': f'{origin} > {first_city}', 'flights_found': 0, 'new_deals': []})}\n\n"
+
         for i, dest in enumerate(destinations):
             city = CITY_NAMES.get(dest, dest)
 
-            # Pace requests to avoid Google rate limits
+            # Pace requests to avoid Google 429 rate limits
             if i > 0:
-                time.sleep(0.5)
+                time.sleep(1)
 
             new_deals: list[dict] = []
             try:
